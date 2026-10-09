@@ -49,6 +49,7 @@ export default function TrekDetails({ navigate, trekId, userRole, setUserRole }:
   }
 
   const wishlisted = wishlist.includes(trek.id)
+  const maxParticipants = Math.min(MAX_PARTICIPANTS, batches.find(b => b.date === selectedDate)?.spots ?? MAX_PARTICIPANTS)
   const price = priceBreakdown(trek.price, participants)
   const bookNow = () => navigate('booking', { trek: trek.id, date: selectedDate, pax: String(participants) })
 
@@ -332,7 +333,11 @@ export default function TrekDetails({ navigate, trekId, userRole, setUserRole }:
                   <select
                     id="batch"
                     value={selectedDate}
-                    onChange={e => setSelectedDate(e.target.value)}
+                    onChange={e => {
+                      const spots = batches.find(b => b.date === e.target.value)?.spots ?? MAX_PARTICIPANTS
+                      setSelectedDate(e.target.value)
+                      setParticipants(p => Math.min(p, spots))
+                    }}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-forest"
                   >
                     {batches.map(b => (
@@ -346,7 +351,7 @@ export default function TrekDetails({ navigate, trekId, userRole, setUserRole }:
                   <div className="flex items-center gap-3 border border-slate-200 rounded-xl px-3 py-2.5">
                     <button onClick={() => setParticipants(Math.max(1, participants - 1))} aria-label="Fewer participants" disabled={participants <= 1} className="disabled:opacity-40 w-6 h-6 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors text-lg leading-none">−</button>
                     <span className="flex-1 text-center text-sm font-semibold text-slate-900" aria-live="polite">{participants}</span>
-                    <button onClick={() => setParticipants(Math.min(MAX_PARTICIPANTS, participants + 1))} aria-label="More participants" disabled={participants >= MAX_PARTICIPANTS} className="disabled:opacity-40 w-6 h-6 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors text-lg leading-none">+</button>
+                    <button onClick={() => setParticipants(Math.min(maxParticipants, participants + 1))} aria-label="More participants" disabled={participants >= maxParticipants} className="disabled:opacity-40 w-6 h-6 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors text-lg leading-none">+</button>
                   </div>
                 </div>
               </div>
