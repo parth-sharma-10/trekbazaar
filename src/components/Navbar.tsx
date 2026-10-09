@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { NavigateFn, Screen, UserRole } from '../types'
 import { useStore } from '../store'
 import { initials } from '../lib'
@@ -35,6 +35,15 @@ export default function Navbar({ navigate, currentScreen, userRole, setUserRole 
   const [mobileOpen, setMobileOpen] = useState(false)
   const isPublicScreen = ['landing', 'explore', 'trek-details', 'login', 'signup'].includes(currentScreen)
   const [profileOpen, setProfileOpen] = useState(false)
+
+  useEffect(() => {
+    if (!profileOpen && !mobileOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setProfileOpen(false); setMobileOpen(false) }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [profileOpen, mobileOpen])
   const { user, logout } = useStore()
   const displayName = userRole === 'admin' ? 'Admin' : userRole === 'operator' ? 'Himalayan Treks Co.' : user?.name ?? 'Rahul Kumar'
   const showAuthButtons = isPublicScreen && !user
