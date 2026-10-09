@@ -10,12 +10,6 @@ interface UserDashboardProps {
   setUserRole: (r: UserRole) => void
 }
 
-const activities = [
-  { icon: '✅', text: 'Booking confirmed for Roopkund Trek', time: '2 hours ago' },
-  { icon: '⭐', text: 'You reviewed Kedarkantha Trek', time: '5 days ago' },
-  { icon: '❤️', text: 'Added Chadar Trek to wishlist', time: '1 week ago' },
-  { icon: '✅', text: 'Completed Triund Trek', time: '3 weeks ago' },
-]
 
 const VETERAN_TREKS = 10
 
@@ -27,6 +21,11 @@ export default function UserDashboard({ navigate, userRole, setUserRole }: UserD
     .sort((a, b) => a.date.localeCompare(b.date))
   const completed = bookings.filter(b => b.status === 'Completed')
   const booked = new Set(bookings.map(b => b.trekId))
+  const activityLabel = { Confirmed: ['✅', 'Booked'], Pending: ['⏳', 'Requested'], Completed: ['🏁', 'Completed'], Cancelled: ['✖️', 'Cancelled'] } as const
+  const activities = bookings.slice(0, 4).map(b => {
+    const [icon, verb] = activityLabel[b.status]
+    return { key: b.id, icon, text: `${verb} ${findTrek(b.trekId)?.title ?? 'a trek'}`, time: `Departure ${formatDate(b.date)}` }
+  })
   const recommended = treks.filter(t => !booked.has(t.id) && !wishlist.includes(t.id)).slice(0, 2)
 
   const stats = [
@@ -157,9 +156,10 @@ export default function UserDashboard({ navigate, userRole, setUserRole }: UserD
             <div className="bg-white rounded-2xl border border-slate-100 p-5">
               <h3 className="font-semibold text-slate-900 mb-4">Recent Activity</h3>
               <div className="space-y-3">
-                {activities.map((a, i) => (
-                  <div key={i} className="flex items-start gap-2.5">
-                    <span className="text-base mt-0.5">{a.icon}</span>
+                {activities.length === 0 && <p className="text-xs text-slate-400">No activity yet.</p>}
+                {activities.map(a => (
+                  <div key={a.key} className="flex items-start gap-2.5">
+                    <span className="text-base mt-0.5" aria-hidden="true">{a.icon}</span>
                     <div>
                       <p className="text-xs text-slate-700 leading-snug">{a.text}</p>
                       <p className="text-xs text-slate-400 mt-0.5">{a.time}</p>
