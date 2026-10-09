@@ -44,7 +44,7 @@ export default function Navbar({ navigate, currentScreen, userRole, setUserRole 
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [profileOpen, mobileOpen])
-  const { user, logout } = useStore()
+  const { user, logout, darkMode, toggleDarkMode } = useStore()
   const displayName = userRole === 'admin' ? 'Admin' : userRole === 'operator' ? 'Himalayan Treks Co.' : user?.name ?? 'Rahul Kumar'
   const showAuthButtons = isPublicScreen && !user
 
@@ -105,6 +105,25 @@ export default function Navbar({ navigate, currentScreen, userRole, setUserRole 
                 </button>
               ))}
             </div>
+
+            {/* Dark mode toggle */}
+            <button
+              type="button"
+              onClick={toggleDarkMode}
+              aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            >
+              {darkMode ? (
+                <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
+            </button>
 
             {showAuthButtons ? (
               <>
@@ -181,6 +200,17 @@ export default function Navbar({ navigate, currentScreen, userRole, setUserRole 
                     {role}
                   </button>
                 ))}
+              </div>
+              <div className="flex items-center justify-between mt-4 px-4 py-2 bg-slate-100/60 rounded-xl">
+                <span className="text-xs font-semibold text-slate-600">Appearance</span>
+                <button
+                  type="button"
+                  onClick={toggleDarkMode}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white text-xs font-medium text-slate-700 shadow-sm"
+                  aria-label="Toggle dark mode"
+                >
+                  {darkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
+                </button>
               </div>
             </div>
           </div>

@@ -12,7 +12,7 @@ interface SettingsProps {
 
 export default function Settings({ navigate, userRole, setUserRole }: SettingsProps) {
   const [activeTab, setActiveTab] = useState('profile')
-  const { updateUser, notify, resetDemo } = useStore()
+  const { updateUser, notify, resetDemo, darkMode, toggleDarkMode } = useStore()
   const user = useCurrentUser()
   const [profile, setProfile] = useState(user)
   const [photo, setPhoto] = useState<string | null>(null)
@@ -247,6 +247,27 @@ export default function Settings({ navigate, userRole, setUserRole }: SettingsPr
                   </div>
                 </div>
                 <button onClick={() => notify('Preferences saved')} className="bg-forest hover:bg-forest-dark text-white px-6 py-3 rounded-xl text-sm font-semibold transition-colors">Save Preferences</button>
+
+                <div className="border-t border-slate-100 pt-5">
+                  <h3 className="font-semibold text-slate-900 mb-1">Appearance</h3>
+                  <p className="text-xs text-slate-400 mb-3">Customize how TrekBazaar looks on your screen.</p>
+                  <div className="flex items-center justify-between gap-4 bg-slate-50 rounded-xl p-4">
+                    <div>
+                      <p className="text-sm font-medium text-slate-700">Dark Mode</p>
+                      <p className="text-xs text-slate-400">Switch to a sleek dark interface that reduces eye strain</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={toggleDarkMode}
+                      role="switch"
+                      aria-checked={darkMode}
+                      aria-label="Dark Mode toggle"
+                      className={`w-11 h-6 rounded-full relative transition-colors shrink-0 ${darkMode ? 'bg-forest' : 'bg-slate-300'}`}
+                    >
+                      <div className={`w-4 h-4 bg-white rounded-full absolute top-1 shadow-sm transition-transform ${darkMode ? 'translate-x-5' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                </div>
 
                 <div className="border-t border-slate-100 pt-5">
                   <h3 className="font-semibold text-slate-900 mb-1">Demo data</h3>

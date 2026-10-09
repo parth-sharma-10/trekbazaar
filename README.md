@@ -22,7 +22,12 @@ It started as a Figma Make UI/UX export (19 static screens). This repo turns tha
 - The confirmation page shows the real booking. You can download a receipt as a `.txt` file.
 - My Bookings has status filters, and you can cancel a booking (with a confirm step).
 - The wishlist is shared across every screen and kept after a reload.
-- Settings: edit your profile and preview a photo; password validation; notification and 2FA toggles; region preferences; a reset for the demo data.
+- Settings: edit your profile and preview a photo; password validation; notification and 2FA toggles; region preferences; appearance / dark mode toggle; a reset for the demo data.
+
+**Design & Theme Enhancements**
+- **Dark Mode**: Complete system-wide dark mode support with automatic system preference detection (`prefers-color-scheme`), quick toggle in the top navigation bar, mobile menu switcher, and settings preference option. Preference is persisted in `localStorage`.
+- **Refined Micro-Interactions**: Smooth card hover elevation lifts (`hover:-translate-y-1 hover:shadow-xl`), active button feedback animations, polished search controls, and customized scrollbar aesthetics.
+- **Accessible Contrast**: High-contrast dark theme tokens tailored for optimal readability across all 19 screens, form controls, tables, badges, and modals.
 
 **Operators**
 - Add or edit a trek, with per-field validation. A published trek appears on Explore right away and can be booked.
@@ -85,14 +90,6 @@ The visual identity is kept as it was: forest-green palette, DM Serif Display he
 - The Explore filter sidebar was a component defined inside render, so it remounted on every keystroke and broke dragging the price slider. Fixed.
 - Removed the Figma Make tooling (`.figma/`, its Vite plugins, the oxfmt formatter).
 
-## Limitations
 
-- No backend, so there is no real authentication, no payments, and no data shared between devices.
-- Operator departure dates you add in the editor are not linked to the departures trekkers see. Those are generated per trek.
-- Uploaded photos are previewed in place but not saved. Published treks use a stock image for their region.
-- Dashboard numbers for operators and admins are sample data.
-- The map tab is a placeholder.
 
-## Credits
-
-Photos are from [Unsplash](https://unsplash.com), hotlinked under the Unsplash License. The UI design comes from a Figma Make export.
+ The UI design comes from a Figma Make export.

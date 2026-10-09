@@ -29,6 +29,7 @@ interface PersistedState {
   wishlist: string[]
   bookings: Booking[]
   customTreks: Trek[]
+  darkMode: boolean
 }
 
 // ponytail: one localStorage key stands in for a backend; swap these setters for API calls when one exists.
@@ -57,6 +58,7 @@ function seedBooking(id: string, trekId: string, offsetDays: number, participant
 
 function initialState(): PersistedState {
   const year = new Date().getFullYear()
+  const prefersDark = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false
   return {
     user: null,
     role: 'user',
@@ -69,6 +71,7 @@ function initialState(): PersistedState {
       seedBooking(`TB-${year - 1}-052341`, '3', -420, 1, 'Cancelled'),
     ],
     customTreks: [],
+    darkMode: prefersDark,
   }
 }
 
@@ -94,6 +97,9 @@ interface Store extends PersistedState {
   setBookingStatus: (id: string, status: BookingStatus) => void
   saveTrek: (trek: Trek) => void
   resetDemo: () => void
+  darkMode: boolean
+  toggleDarkMode: () => void
+  setDarkMode: (enabled: boolean) => void
   toast: string | null
   notify: (message: string) => void
 }
@@ -112,6 +118,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       // Storage full or blocked: the session still works in memory.
     }
   }, [state])
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (state.darkMode) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+    }
+  }, [state.darkMode])
 
   const notify = useCallback((message: string) => {
     window.clearTimeout(toastTimer.current)
@@ -150,6 +166,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         customTreks: [...s.customTreks.filter(t => t.id !== trek.id), trek],
       })),
       resetDemo: () => setState(initialState()),
+      toggleDarkMode: () => setState(s => ({ ...s, darkMode: !s.darkMode })),
+      setDarkMode: enabled => setState(s => ({ ...s, darkMode: enabled })),
       toast,
       notify,
     }

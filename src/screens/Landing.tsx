@@ -109,7 +109,7 @@ export default function Landing({ navigate, userRole, setUserRole, section }: La
           </p>
 
           {/* Search bar */}
-          <form onSubmit={handleSearch} role="search" className="bg-white rounded-2xl shadow-2xl p-2 max-w-3xl mx-auto">
+          <form onSubmit={handleSearch} role="search" className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-2xl p-2.5 max-w-3xl mx-auto border border-white/20 dark:border-slate-800">
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
               <div className="sm:col-span-1 relative">
                 <svg className="absolute left-3 top-3.5 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -121,36 +121,36 @@ export default function Landing({ navigate, userRole, setUserRole, section }: La
                   aria-label="Destination or trek name"
                   value={searchDest}
                   onChange={e => setSearchDest(e.target.value)}
-                  className="w-full pl-9 pr-3 py-3 text-sm text-slate-700 placeholder-slate-400 focus:outline-none rounded-xl"
+                  className="w-full pl-9 pr-3 py-3 text-sm text-slate-700 dark:text-slate-100 placeholder-slate-400 focus:outline-none rounded-xl bg-transparent"
                 />
               </div>
               <select
                 value={searchDiff}
                 onChange={e => setSearchDiff(e.target.value)}
                 aria-label="Difficulty"
-                className="w-full px-3 py-3 text-sm text-slate-600 focus:outline-none bg-white rounded-xl border-l border-slate-100"
+                className="w-full px-3 py-3 text-sm text-slate-600 dark:text-slate-200 focus:outline-none bg-transparent rounded-xl sm:border-l sm:border-slate-200 dark:sm:border-slate-800"
               >
-                <option value="">All Difficulties</option>
-                <option value="Easy">Easy</option>
-                <option value="Moderate">Moderate</option>
-                <option value="Difficult">Difficult</option>
-                <option value="Expert">Expert</option>
+                <option value="" className="text-slate-800 dark:text-slate-200 dark:bg-slate-900">All Difficulties</option>
+                <option value="Easy" className="text-slate-800 dark:text-slate-200 dark:bg-slate-900">Easy</option>
+                <option value="Moderate" className="text-slate-800 dark:text-slate-200 dark:bg-slate-900">Moderate</option>
+                <option value="Difficult" className="text-slate-800 dark:text-slate-200 dark:bg-slate-900">Difficult</option>
+                <option value="Expert" className="text-slate-800 dark:text-slate-200 dark:bg-slate-900">Expert</option>
               </select>
               <select
                 value={searchDuration}
                 onChange={e => setSearchDuration(e.target.value)}
                 aria-label="Duration"
-                className="w-full px-3 py-3 text-sm text-slate-600 focus:outline-none bg-white rounded-xl border-l border-slate-100"
+                className="w-full px-3 py-3 text-sm text-slate-600 dark:text-slate-200 focus:outline-none bg-transparent rounded-xl sm:border-l sm:border-slate-200 dark:sm:border-slate-800"
               >
-                <option value="">Any Duration</option>
-                <option value="1-3">1–3 Days</option>
-                <option value="4-6">4–6 Days</option>
-                <option value="7-10">7–10 Days</option>
-                <option value="10+">10+ Days</option>
+                <option value="" className="text-slate-800 dark:text-slate-200 dark:bg-slate-900">Any Duration</option>
+                <option value="1-3" className="text-slate-800 dark:text-slate-200 dark:bg-slate-900">1–3 Days</option>
+                <option value="4-6" className="text-slate-800 dark:text-slate-200 dark:bg-slate-900">4–6 Days</option>
+                <option value="7-10" className="text-slate-800 dark:text-slate-200 dark:bg-slate-900">7–10 Days</option>
+                <option value="10+" className="text-slate-800 dark:text-slate-200 dark:bg-slate-900">10+ Days</option>
               </select>
               <button
                 type="submit"
-                className="bg-forest hover:bg-forest-dark text-white font-semibold py-3 px-6 rounded-xl transition-colors text-sm"
+                className="bg-forest hover:bg-forest-dark active:scale-[0.98] text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-md hover:shadow-lg text-sm cursor-pointer"
               >
                 Search Treks
               </button>
