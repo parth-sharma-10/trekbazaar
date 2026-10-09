@@ -90,14 +90,6 @@ The visual identity is kept as it was: forest-green palette, DM Serif Display he
 - The Explore filter sidebar was a component defined inside render, so it remounted on every keystroke and broke dragging the price slider. Fixed.
 - Removed the Figma Make tooling (`.figma/`, its Vite plugins, the oxfmt formatter).
 
-## Limitations
 
-- No backend, so there is no real authentication, no payments, and no data shared between devices.
-- Operator departure dates you add in the editor are not linked to the departures trekkers see. Those are generated per trek.
-- Uploaded photos are previewed in place but not saved. Published treks use a stock image for their region.
-- Dashboard numbers for operators and admins are sample data.
-- The map tab is a placeholder.
 
-## Credits
-
-Photos are from [Unsplash](https://unsplash.com), hotlinked under the Unsplash License. The UI design comes from a Figma Make export.
+ The UI design comes from a Figma Make export.
