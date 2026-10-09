@@ -26,7 +26,7 @@ const diffColors: Record<string, string> = {
 }
 
 export default function TrekDetails({ navigate, trekId, userRole, setUserRole }: TrekDetailsProps) {
-  const { findTrek, wishlist, toggleWishlist, notify } = useStore()
+  const { findTrek, treks, wishlist, toggleWishlist, notify } = useStore()
   const trek = findTrek(trekId)
   const [activeTab, setActiveTab] = useState('overview')
   const [activeImg, setActiveImg] = useState(0)
@@ -49,6 +49,11 @@ export default function TrekDetails({ navigate, trekId, userRole, setUserRole }:
   }
 
   const wishlisted = wishlist.includes(trek.id)
+  const operatorTreks = treks.filter(t => t.operatorId === trek.operatorId)
+  const reviewed = operatorTreks.filter(t => t.reviewCount > 0)
+  const operatorRating = reviewed.length
+    ? (reviewed.reduce((sum, t) => sum + t.rating * t.reviewCount, 0) / reviewed.reduce((sum, t) => sum + t.reviewCount, 0)).toFixed(1)
+    : null
   const maxParticipants = Math.min(MAX_PARTICIPANTS, batches.find(b => b.date === selectedDate)?.spots ?? MAX_PARTICIPANTS)
   const price = priceBreakdown(trek.price, participants)
   const bookNow = () => navigate('booking', { trek: trek.id, date: selectedDate, pax: String(participants) })
@@ -407,12 +412,12 @@ export default function TrekDetails({ navigate, trekId, userRole, setUserRole }:
               </div>
               <div className="grid grid-cols-2 gap-3 text-center text-xs">
                 <div className="bg-slate-50 rounded-lg py-2">
-                  <div className="font-bold text-slate-800">4.9 ★</div>
-                  <div className="text-slate-400">Rating</div>
+                  <div className="font-bold text-slate-800">{operatorRating ? `${operatorRating} ★` : 'New'}</div>
+                  <div className="text-slate-400">Avg. rating</div>
                 </div>
                 <div className="bg-slate-50 rounded-lg py-2">
-                  <div className="font-bold text-slate-800">6 yrs</div>
-                  <div className="text-slate-400">Experience</div>
+                  <div className="font-bold text-slate-800">{operatorTreks.length}</div>
+                  <div className="text-slate-400">Trek{operatorTreks.length === 1 ? '' : 's'} listed</div>
                 </div>
               </div>
             </div>
