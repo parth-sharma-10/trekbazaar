@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Navbar from '../components/Navbar'
 import { useStore, type BookingStatus } from '../store'
-import { formatDate, formatINR } from '../lib'
+import { daysUntil, formatDate, formatINR } from '../lib'
 import type { NavigateFn, UserRole } from '../types'
 
 interface BookingHistoryProps {
@@ -9,6 +9,8 @@ interface BookingHistoryProps {
   userRole: UserRole
   setUserRole: (r: UserRole) => void
 }
+
+const FREE_CANCELLATION_DAYS = 30
 
 const statusConfig: Record<BookingStatus, { bg: string; text: string }> = {
   Confirmed: { bg: 'bg-green-100', text: 'text-green-700' },
@@ -25,10 +27,12 @@ export default function BookingHistory({ navigate, userRole, setUserRole }: Book
 
   const filtered = filter === 'All' ? allBookings : allBookings.filter(b => b.status === filter)
 
-  const cancel = (id: string) => {
+  const cancel = (id: string, date: string) => {
     setBookingStatus(id, 'Cancelled')
     setConfirmingCancel(null)
-    notify(`Booking ${id} cancelled. Refunds take 5–7 business days (demo).`)
+    notify(daysUntil(date) >= FREE_CANCELLATION_DAYS
+      ? `Booking ${id} cancelled. Full refund in 5–7 business days (demo).`
+      : `Booking ${id} cancelled. Departures within ${FREE_CANCELLATION_DAYS} days are not refundable.`)
   }
 
   return (
@@ -86,7 +90,9 @@ export default function BookingHistory({ navigate, userRole, setUserRole }: Book
                       <button onClick={() => notify(`Thanks! Your review for ${trek?.title ?? 'this trek'} was submitted for moderation (demo).`)} className="text-xs font-medium text-blue-600 hover:text-blue-700 border border-blue-200 rounded-lg px-3 py-1.5 transition-colors">Write Review</button>
                     )}
                     {cancellable && (confirmingCancel === b.id ? (
-                      <button onClick={() => cancel(b.id)} className="text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg px-3 py-1.5 transition-colors">Confirm cancel</button>
+                      <button onClick={() => cancel(b.id, b.date)} className="text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg px-3 py-1.5 transition-colors">
+                        {daysUntil(b.date) >= FREE_CANCELLATION_DAYS ? 'Confirm cancel' : 'Cancel, no refund'}
+                      </button>
                     ) : (
                       <button onClick={() => setConfirmingCancel(b.id)} className="text-xs font-medium text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5 transition-colors">Cancel</button>
                     ))}

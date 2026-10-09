@@ -26,7 +26,7 @@ const diffColors: Record<string, string> = {
 }
 
 export default function TrekDetails({ navigate, trekId, userRole, setUserRole }: TrekDetailsProps) {
-  const { findTrek, wishlist, toggleWishlist, notify } = useStore()
+  const { findTrek, treks, wishlist, toggleWishlist, notify } = useStore()
   const trek = findTrek(trekId)
   const [activeTab, setActiveTab] = useState('overview')
   const [activeImg, setActiveImg] = useState(0)
@@ -49,6 +49,12 @@ export default function TrekDetails({ navigate, trekId, userRole, setUserRole }:
   }
 
   const wishlisted = wishlist.includes(trek.id)
+  const operatorTreks = treks.filter(t => t.operatorId === trek.operatorId)
+  const reviewed = operatorTreks.filter(t => t.reviewCount > 0)
+  const operatorRating = reviewed.length
+    ? (reviewed.reduce((sum, t) => sum + t.rating * t.reviewCount, 0) / reviewed.reduce((sum, t) => sum + t.reviewCount, 0)).toFixed(1)
+    : null
+  const maxParticipants = Math.min(MAX_PARTICIPANTS, batches.find(b => b.date === selectedDate)?.spots ?? MAX_PARTICIPANTS)
   const price = priceBreakdown(trek.price, participants)
   const bookNow = () => navigate('booking', { trek: trek.id, date: selectedDate, pax: String(participants) })
 
@@ -332,7 +338,11 @@ export default function TrekDetails({ navigate, trekId, userRole, setUserRole }:
                   <select
                     id="batch"
                     value={selectedDate}
-                    onChange={e => setSelectedDate(e.target.value)}
+                    onChange={e => {
+                      const spots = batches.find(b => b.date === e.target.value)?.spots ?? MAX_PARTICIPANTS
+                      setSelectedDate(e.target.value)
+                      setParticipants(p => Math.min(p, spots))
+                    }}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-forest"
                   >
                     {batches.map(b => (
@@ -346,7 +356,7 @@ export default function TrekDetails({ navigate, trekId, userRole, setUserRole }:
                   <div className="flex items-center gap-3 border border-slate-200 rounded-xl px-3 py-2.5">
                     <button onClick={() => setParticipants(Math.max(1, participants - 1))} aria-label="Fewer participants" disabled={participants <= 1} className="disabled:opacity-40 w-6 h-6 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors text-lg leading-none">−</button>
                     <span className="flex-1 text-center text-sm font-semibold text-slate-900" aria-live="polite">{participants}</span>
-                    <button onClick={() => setParticipants(Math.min(MAX_PARTICIPANTS, participants + 1))} aria-label="More participants" disabled={participants >= MAX_PARTICIPANTS} className="disabled:opacity-40 w-6 h-6 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors text-lg leading-none">+</button>
+                    <button onClick={() => setParticipants(Math.min(maxParticipants, participants + 1))} aria-label="More participants" disabled={participants >= maxParticipants} className="disabled:opacity-40 w-6 h-6 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors text-lg leading-none">+</button>
                   </div>
                 </div>
               </div>
@@ -402,12 +412,12 @@ export default function TrekDetails({ navigate, trekId, userRole, setUserRole }:
               </div>
               <div className="grid grid-cols-2 gap-3 text-center text-xs">
                 <div className="bg-slate-50 rounded-lg py-2">
-                  <div className="font-bold text-slate-800">4.9 ★</div>
-                  <div className="text-slate-400">Rating</div>
+                  <div className="font-bold text-slate-800">{operatorRating ? `${operatorRating} ★` : 'New'}</div>
+                  <div className="text-slate-400">Avg. rating</div>
                 </div>
                 <div className="bg-slate-50 rounded-lg py-2">
-                  <div className="font-bold text-slate-800">6 yrs</div>
-                  <div className="text-slate-400">Experience</div>
+                  <div className="font-bold text-slate-800">{operatorTreks.length}</div>
+                  <div className="text-slate-400">Trek{operatorTreks.length === 1 ? '' : 's'} listed</div>
                 </div>
               </div>
             </div>

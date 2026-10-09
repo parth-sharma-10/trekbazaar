@@ -96,10 +96,15 @@ export default function BookingFlow({ navigate, trekId, initialDate, initialPart
     return e
   }
 
+  // Wait a frame so aria-invalid has rendered, then bring the first bad field into view.
+  const focusFirstError = () =>
+    requestAnimationFrame(() => document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus())
+
   const goTo = (next: number, validate?: () => Errors) => {
     const found = validate?.() ?? {}
     setErrors(found)
-    if (Object.keys(found).length === 0) {
+    if (Object.keys(found).length > 0) focusFirstError()
+    else {
       setStep(next)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
@@ -108,7 +113,7 @@ export default function BookingFlow({ navigate, trekId, initialDate, initialPart
   const pay = () => {
     const found = validatePayment()
     setErrors(found)
-    if (Object.keys(found).length > 0) return
+    if (Object.keys(found).length > 0) return focusFirstError()
     setProcessing(true)
     // ponytail: simulated gateway delay; replace with a real payment intent when a backend exists.
     window.setTimeout(() => {
