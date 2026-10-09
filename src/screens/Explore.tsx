@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import TrekCard from '../components/TrekCard'
 import { useStore } from '../store'
-import type { Query } from '../router'
+import { toHash, type Query } from '../router'
 import type { NavigateFn, UserRole } from '../types'
 
 interface ExploreProps {
@@ -19,13 +19,27 @@ export default function Explore({ navigate, userRole, setUserRole, query }: Expl
   const { treks } = useStore()
   const priceCeiling = Math.max(25000, Math.ceil(Math.max(...treks.map(t => t.price)) / 5000) * 5000)
   const [search, setSearch] = useState(query.q ?? '')
-  const [difficulty, setDifficulty] = useState<string[]>(query.difficulty ? [query.difficulty] : [])
-  const [duration, setDuration] = useState<string[]>(query.duration ? [query.duration] : [])
-  const [maxPrice, setMaxPrice] = useState(priceCeiling)
+  const [difficulty, setDifficulty] = useState<string[]>(query.difficulty ? query.difficulty.split(',') : [])
+  const [duration, setDuration] = useState<string[]>(query.duration ? query.duration.split(',') : [])
+  const [maxPrice, setMaxPrice] = useState(Number(query.max) || priceCeiling)
   const [state, setState] = useState(query.state ?? '')
-  const [sort, setSort] = useState('popular')
+  const [sort, setSort] = useState(query.sort ?? 'popular')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Mirror filters into the URL so refresh and shared links keep them. replaceState
+  // avoids a history entry per keystroke and does not fire hashchange.
+  useEffect(() => {
+    const hash = toHash('explore', {
+      q: search.trim(),
+      difficulty: difficulty.join(','),
+      duration: duration.join(','),
+      state,
+      max: maxPrice < priceCeiling ? String(maxPrice) : undefined,
+      sort: sort === 'popular' ? undefined : sort,
+    })
+    if (hash !== window.location.hash) history.replaceState(null, '', hash)
+  }, [search, difficulty, duration, state, maxPrice, sort, priceCeiling])
 
   const toggleDiff = (d: string) => setDifficulty(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d])
   const toggleDur = (d: string) => setDuration(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d])
