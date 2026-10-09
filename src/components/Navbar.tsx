@@ -19,7 +19,7 @@ const userNav = [
 
 const operatorNav = [
   { label: 'Dashboard', screen: 'operator-dashboard' as Screen },
-  { label: 'My Treks', screen: 'add-trek' as Screen },
+  { label: 'Add Trek', screen: 'add-trek' as Screen },
   { label: 'Bookings', screen: 'booking-management' as Screen },
   { label: 'Analytics', screen: 'revenue-analytics' as Screen },
 ]
