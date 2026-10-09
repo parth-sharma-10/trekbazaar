@@ -116,7 +116,7 @@ export default function App() {
   return (
     <>
       {/* key remounts the screen on navigation so per-screen state starts fresh */}
-      <div key={window.location.hash}>{renderScreen()}</div>
+      <div key={toHash(screen, query)}>{renderScreen()}</div>
       <div aria-live="polite" className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-4 w-full max-w-md pointer-events-none">
         {toast && (
           <div className="bg-slate-900 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-2xl text-center">
