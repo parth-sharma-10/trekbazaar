@@ -61,7 +61,7 @@ const titles: Record<Screen, string> = {
 }
 
 export default function App() {
-  const { role, setRole, toast } = useStore()
+  const { role, setRole, toast, findTrek } = useStore()
   const [route, setRoute] = useState<Route>(() => parseHash(window.location.hash))
 
   useEffect(() => {
@@ -78,8 +78,10 @@ export default function App() {
   useEffect(() => {
     const required = roleForScreen[screen]
     if (required && required !== role) setRole(required)
-    document.title = `${titles[screen]} · TrekBazaar`
-  }, [screen, role, setRole])
+    const trekTitle = screen === 'trek-details' || screen === 'booking' ? findTrek(query.trek)?.title : undefined
+    const page = trekTitle ? (screen === 'booking' ? `Book ${trekTitle}` : trekTitle) : titles[screen]
+    document.title = `${page} · TrekBazaar`
+  }, [screen, query.trek, role, setRole, findTrek])
 
   const navigate: NavigateFn = (next, params) => {
     const hash = toHash(next, params)
