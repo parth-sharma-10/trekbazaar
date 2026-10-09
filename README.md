@@ -22,7 +22,12 @@ It started as a Figma Make UI/UX export (19 static screens). This repo turns tha
 - The confirmation page shows the real booking. You can download a receipt as a `.txt` file.
 - My Bookings has status filters, and you can cancel a booking (with a confirm step).
 - The wishlist is shared across every screen and kept after a reload.
-- Settings: edit your profile and preview a photo; password validation; notification and 2FA toggles; region preferences; a reset for the demo data.
+- Settings: edit your profile and preview a photo; password validation; notification and 2FA toggles; region preferences; appearance / dark mode toggle; a reset for the demo data.
+
+**Design & Theme Enhancements**
+- **Dark Mode**: Complete system-wide dark mode support with automatic system preference detection (`prefers-color-scheme`), quick toggle in the top navigation bar, mobile menu switcher, and settings preference option. Preference is persisted in `localStorage`.
+- **Refined Micro-Interactions**: Smooth card hover elevation lifts (`hover:-translate-y-1 hover:shadow-xl`), active button feedback animations, polished search controls, and customized scrollbar aesthetics.
+- **Accessible Contrast**: High-contrast dark theme tokens tailored for optimal readability across all 19 screens, form controls, tables, badges, and modals.
 
 **Operators**
 - Add or edit a trek, with per-field validation. A published trek appears on Explore right away and can be booked.
