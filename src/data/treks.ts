@@ -22,6 +22,8 @@ export interface Trek {
   operator: string
   operatorId: string
   image: string
+  // Who took the cover photo and under which licence, shown under the image.
+  imageCredit?: string
   gallery: string[]
   tags: string[]
   description: string
@@ -150,7 +152,7 @@ export const treks: Omit<Trek, 'rating' | 'reviewCount' | 'departures'>[] = [
     price: 18000,
     maxAltitude: '3400m',
     bestMonths: 'Jan–Feb',
-    operator: 'Ladakh Adventures',
+    operator: 'Himalayan Treks Co.',
     operatorId: 'op1',
     image: 'https://images.unsplash.com/photo-1718429205172-0d91b73ab23c?w=800&h=600&fit=crop&auto=format',
     gallery: [
@@ -187,7 +189,7 @@ export const treks: Omit<Trek, 'rating' | 'reviewCount' | 'departures'>[] = [
     maxAltitude: '3810m',
     bestMonths: 'Dec–Apr',
     operator: 'Summit Seekers',
-    operatorId: 'op2',
+    operatorId: 'op6',
     image: 'https://images.unsplash.com/photo-1651319481112-b7027eeb4e8f?w=800&h=600&fit=crop&auto=format',
     gallery: [
       'https://images.unsplash.com/photo-1651319481112-b7027eeb4e8f?w=1200&h=800&fit=crop&auto=format',
@@ -220,7 +222,7 @@ export const treks: Omit<Trek, 'rating' | 'reviewCount' | 'departures'>[] = [
     maxAltitude: '2452m',
     bestMonths: 'Jun–Sep',
     operator: 'Northeast Trails',
-    operatorId: 'op3',
+    operatorId: 'op5',
     image: 'https://images.unsplash.com/photo-1704610077766-7a5e0535638c?w=800&h=600&fit=crop&auto=format',
     gallery: [
       'https://images.unsplash.com/photo-1704610077766-7a5e0535638c?w=1200&h=800&fit=crop&auto=format',

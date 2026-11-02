@@ -68,7 +68,7 @@ treks.get('/:id', async (req, res) => {
 
 const trekFields = [
   'title', 'location', 'state', 'difficulty', 'duration', 'durationDays', 'price', 'maxAltitude',
-  'bestMonths', 'image', 'gallery', 'tags', 'description', 'highlights', 'itinerary', 'inclusions',
+  'bestMonths', 'image', 'imageCredit', 'gallery', 'tags', 'description', 'highlights', 'itinerary', 'inclusions',
   'exclusions', 'meetingPoint', 'groupSize', 'departures',
 ]
 // Only an admin may reassign a trek to another operator.

@@ -86,6 +86,9 @@ export default function TrekDetails({ navigate, trekId, userRole }: TrekDetailsP
                 <img src={trek.gallery[activeImg] || trek.image} alt={trek.title} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
               </div>
+              {trek.imageCredit && (
+                <p className="px-3 py-1.5 bg-white text-[11px] text-slate-400">Photo: {trek.imageCredit}</p>
+              )}
               {trek.gallery.length > 1 && (
                 <div className="flex gap-2 p-3 bg-white overflow-x-auto">
                   {trek.gallery.map((img, i) => (
