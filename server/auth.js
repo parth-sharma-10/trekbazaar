@@ -45,6 +45,7 @@ export async function authenticate(req, res, next) {
   const userId = header.startsWith('Bearer ') ? readToken(header.slice(7)) : null
   req.user = userId ? await User.findOne({ id: userId }) : null
   if (!req.user) return res.status(401).json({ error: 'Your session has expired. Log in again.' })
+  if (req.user.suspended) return res.status(403).json({ error: 'This account is suspended' })
   next()
 }
 

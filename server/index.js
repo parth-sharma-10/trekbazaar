@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url'
 import express from 'express'
 import mongoose from 'mongoose'
 import { authenticate } from './auth.js'
-import { bookings, treks, users } from './routes.js'
+import { bookings, reviews, treks, users } from './routes.js'
 
 const PORT = process.env.PORT || 4000
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/trekbazaar'
@@ -22,6 +22,7 @@ app.get('/api/health', (req, res) => res.json({ ok: true, db: mongoose.connectio
 app.use('/api/treks', treks)
 app.use('/api/bookings', bookings)
 app.use('/api/users', users)
+app.use('/api/reviews', reviews)
 
 app.use((req, res) => res.status(404).json({ error: `Route ${req.method} ${req.originalUrl} not found` }))
 

@@ -1,3 +1,9 @@
+export interface Departure {
+  date: string
+  seats: number
+  seatsLeft: number
+}
+
 export interface Trek {
   id: string
   title: string
@@ -7,8 +13,10 @@ export interface Trek {
   duration: string
   durationDays: number
   price: number
+  // Computed by the API from approved reviews and active bookings; never stored by hand.
   rating: number
   reviewCount: number
+  departures: Departure[]
   maxAltitude: string
   bestMonths: string
   operator: string
@@ -25,7 +33,8 @@ export interface Trek {
   groupSize: string
 }
 
-export const treks: Trek[] = [
+// Demo listings loaded by `npm run seed`. Ratings and departures are not part of them.
+export const treks: Omit<Trek, 'rating' | 'reviewCount' | 'departures'>[] = [
   {
     id: '1',
     title: 'Roopkund Trek',
@@ -35,8 +44,6 @@ export const treks: Trek[] = [
     duration: '8 Days',
     durationDays: 8,
     price: 14500,
-    rating: 4.8,
-    reviewCount: 312,
     maxAltitude: '5029m',
     bestMonths: 'May–Jun, Sep–Oct',
     operator: 'Himalayan Treks Co.',
@@ -75,8 +82,6 @@ export const treks: Trek[] = [
     duration: '6 Days',
     durationDays: 6,
     price: 11200,
-    rating: 4.9,
-    reviewCount: 487,
     maxAltitude: '3658m',
     bestMonths: 'Jul–Sep',
     operator: 'Wildflower Expeditions',
@@ -111,8 +116,6 @@ export const treks: Trek[] = [
     duration: '5 Days',
     durationDays: 5,
     price: 9800,
-    rating: 4.7,
-    reviewCount: 256,
     maxAltitude: '4270m',
     bestMonths: 'Jun–Sep',
     operator: 'Mountain Spirit',
@@ -145,8 +148,6 @@ export const treks: Trek[] = [
     duration: '9 Days',
     durationDays: 9,
     price: 18000,
-    rating: 4.9,
-    reviewCount: 198,
     maxAltitude: '3400m',
     bestMonths: 'Jan–Feb',
     operator: 'Ladakh Adventures',
@@ -183,8 +184,6 @@ export const treks: Trek[] = [
     duration: '6 Days',
     durationDays: 6,
     price: 8500,
-    rating: 4.8,
-    reviewCount: 623,
     maxAltitude: '3810m',
     bestMonths: 'Dec–Apr',
     operator: 'Summit Seekers',
@@ -218,8 +217,6 @@ export const treks: Trek[] = [
     duration: '3 Days',
     durationDays: 3,
     price: 6500,
-    rating: 4.6,
-    reviewCount: 142,
     maxAltitude: '2452m',
     bestMonths: 'Jun–Sep',
     operator: 'Northeast Trails',
@@ -250,8 +247,6 @@ export const treks: Trek[] = [
     duration: '7 Days',
     durationDays: 7,
     price: 12500,
-    rating: 4.7,
-    reviewCount: 289,
     maxAltitude: '3636m',
     bestMonths: 'Apr–May, Oct–Nov',
     operator: 'Bengal Himalaya Co.',
@@ -286,8 +281,6 @@ export const treks: Trek[] = [
     duration: '2 Days',
     durationDays: 2,
     price: 3500,
-    rating: 4.5,
-    reviewCount: 891,
     maxAltitude: '2875m',
     bestMonths: 'Mar–Jun, Sep–Dec',
     operator: 'Mountain Spirit',

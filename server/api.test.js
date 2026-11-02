@@ -8,6 +8,7 @@ import { DEMO_PASSWORD, seed } from './seed.js'
 let server
 let base
 const tokens = {}
+let departure // first scheduled departure of the seeded treks
 
 before(async () => {
   server = await start(process.env.TEST_MONGO_URI || 'mongodb://127.0.0.1:27017/trekbazaar_test', 0)
@@ -19,6 +20,7 @@ before(async () => {
   tokens.admin = await loginAs('admin@trekbazaar.in')
   const other = await call('POST', '/users/register', { name: 'Other Op', email: 'other.op@example.com', password: 'longenough', role: 'operator' })
   tokens.otherOperator = other.body.token
+  departure = (await call('GET', '/treks/1')).body.departures[0].date
 })
 
 after(async () => {
@@ -54,14 +56,14 @@ const newTrek = {
   description: 'A short test trek used only by the integration tests.',
 }
 
-const booking = (trekId = '1') => ({ trekId, date: '2027-05-01', participants: 2, traveller: 'A B' })
+const booking = (trekId = '1') => ({ trekId, date: departure, participants: 2, traveller: 'A B' })
 
 test('treks: operator creates, reads, updates and deletes their own trek', async () => {
   const created = await call('POST', '/treks', { ...newTrek, operatorId: 'someone-else', rating: 5 }, tokens.operator)
   assert.equal(created.status, 201)
   assert.equal(created.body._id, undefined, '_id must not leak')
   assert.equal(created.body.operatorId, 'op1', 'owner comes from the session, not the body')
-  assert.equal(created.body.rating, 0, 'operators cannot set their own rating')
+  assert.equal(created.body.rating, 0, 'nobody can set a rating by hand')
   const { id } = created.body
 
   assert.equal((await call('GET', `/treks/${id}`)).body.title, 'Test Ridge Trek')
@@ -86,10 +88,29 @@ test('treks: guests, trekkers and other operators cannot write', async () => {
   assert.notEqual((await call('GET', '/treks/1')).body.price, 999999)
 })
 
-test('treks: admin can edit any trek, including its rating', async () => {
-  const res = await call('PUT', '/treks/2', { rating: 4.2 }, tokens.admin)
+test('treks: admin can edit any trek, but not its rating', async () => {
+  const res = await call('PUT', '/treks/2', { price: 9000, rating: 4.2, reviewCount: 99 }, tokens.admin)
   assert.equal(res.status, 200)
-  assert.equal(res.body.rating, 4.2)
+  assert.equal(res.body.price, 9000)
+  assert.equal(res.body.rating, 0)
+  assert.equal(res.body.reviewCount, 0)
+})
+
+test('treks: departures are owner-managed, past ones hidden, seats counted from bookings', async () => {
+  const original = (await call('GET', '/treks/4')).body.departures.map(({ date, seats }) => ({ date, seats }))
+  const dates = ['2020-01-01', '2099-03-01', '2099-02-01']
+  const res = await call('PUT', '/treks/4', { departures: dates.map(date => ({ date, seats: 3 })) }, tokens.operator)
+  assert.equal(res.status, 200)
+  assert.deepEqual(res.body.departures.map(d => d.date), ['2099-02-01', '2099-03-01'], 'sorted, past dropped')
+  assert.equal((await call('PUT', '/treks/4', { departures: [] }, tokens.otherOperator)).status, 403)
+
+  const pick = { trekId: '4', date: '2099-02-01', traveller: 'A B' }
+  assert.equal((await call('POST', '/bookings', { ...pick, date: '2099-02-02', participants: 1 }, tokens.user)).status, 400)
+  assert.equal((await call('POST', '/bookings', { ...pick, date: '2020-01-01', participants: 1 }, tokens.user)).status, 400)
+  assert.equal((await call('POST', '/bookings', { ...pick, participants: 2 }, tokens.user)).status, 201)
+  assert.equal((await call('GET', '/treks/4')).body.departures[0].seatsLeft, 1)
+  assert.equal((await call('POST', '/bookings', { ...pick, participants: 2 }, tokens.user)).status, 409, 'overfull')
+  await call('PUT', '/treks/4', { departures: original }, tokens.operator)
 })
 
 test('treks: schema validation returns 400 with the field message', async () => {
@@ -109,7 +130,7 @@ test('bookings: server recomputes the amount, owner and status', async () => {
   assert.equal(res.status, 201)
   assert.equal(res.body.amount, 30450) // 14500 x 2 + 5% fee
   assert.equal(res.body.email, 'rahul.kumar@example.com')
-  assert.equal(res.body.status, 'Confirmed')
+  assert.equal(res.body.status, 'Pending', 'a booking is a request until the operator confirms')
   assert.match(res.body.id, /^TB-\d{4}-\d{6}$/)
 
   assert.equal((await call('POST', '/bookings', booking('nope'), tokens.user)).status, 400)
@@ -188,7 +209,7 @@ test('users: profiles and roles are protected', async () => {
   assert.equal((await call('PUT', '/users/admin1', { role: 'user' }, tokens.admin)).status, 403, 'admin cannot demote self')
 
   const reg = await call('POST', '/users/register', { name: 'Promote Me', email: 'promote@example.com', password: 'longenough' })
-  const promoted = await call('PUT', `/users/${reg.body.user.id}`, { role: 'operator' }, tokens.admin)
+  const promoted = await call('PUT', `/users/${reg.body.user.id}`, { role: 'operator', verified: true }, tokens.admin)
   assert.equal(promoted.body.role, 'operator')
   // The role is read from the database per request, so the old token already has the new rights.
   assert.equal((await call('POST', '/treks', newTrek, reg.body.token)).status, 201)
@@ -215,6 +236,59 @@ test('users: only an admin deletes accounts, and never their own', async () => {
   assert.equal((await call('DELETE', `/users/${id}`, undefined, tokens.admin)).status, 200)
   assert.equal((await call('POST', '/users/login', { email: 'gone@example.com', password: 'longenough' })).status, 401)
   assert.equal((await call('DELETE', `/users/${id}`, undefined, tokens.admin)).status, 404)
+})
+
+test('operators: unverified ones cannot publish until an admin verifies them', async () => {
+  const reg = await call('POST', '/users/register', { name: 'New Op', email: 'newop@example.com', password: 'longenough', role: 'operator' })
+  const { token, user } = reg.body
+  assert.equal(user.verified, false)
+  assert.equal((await call('POST', '/treks', newTrek, token)).status, 403)
+  assert.equal((await call('PUT', `/users/${user.id}`, { verified: true }, token)).status, 403, 'no self-verification')
+  assert.equal((await call('PUT', `/users/${user.id}`, { verified: true }, tokens.operator)).status, 403)
+  assert.equal((await call('PUT', `/users/${user.id}`, { verified: true }, tokens.admin)).body.verified, true)
+  assert.equal((await call('POST', '/treks', newTrek, token)).status, 201)
+})
+
+test('users: suspended accounts cannot log in or use old tokens', async () => {
+  const reg = await call('POST', '/users/register', { name: 'Sus', email: 'sus@example.com', password: 'longenough' })
+  const { token, user } = reg.body
+  assert.equal((await call('PUT', `/users/${user.id}`, { suspended: false }, token)).status, 403)
+  assert.equal((await call('PUT', `/users/${user.id}`, { suspended: true }, tokens.admin)).body.suspended, true)
+  assert.equal((await call('GET', '/bookings', undefined, token)).status, 403)
+  assert.equal((await call('POST', '/users/login', { email: 'sus@example.com', password: 'longenough' })).status, 403)
+  assert.equal((await call('POST', '/users/login', { email: 'sus@example.com', password: 'wrong-pass' })).status, 401, 'no leak without the password')
+  assert.equal((await call('PUT', '/users/admin1', { suspended: true }, tokens.admin)).status, 403, 'admin cannot suspend self')
+  await call('PUT', `/users/${user.id}`, { suspended: false }, tokens.admin)
+  assert.equal((await call('POST', '/users/login', { email: 'sus@example.com', password: 'longenough' })).status, 200)
+})
+
+test('reviews: only after a completed trek, moderated, and they drive the rating', async () => {
+  const review = { trekId: '5', rating: 4, comment: 'Clear skies on the summit day, well run.' }
+  assert.equal((await call('POST', '/reviews', review)).status, 401)
+  assert.equal((await call('POST', '/reviews', review, tokens.operator)).status, 403)
+  assert.equal((await call('POST', '/reviews', { ...review, trekId: '1' }, tokens.user)).status, 403, 'trek 1 not completed')
+  assert.equal((await call('POST', '/reviews', { ...review, comment: 'short' }, tokens.user)).status, 400)
+  assert.equal((await call('POST', '/reviews', { ...review, rating: 6 }, tokens.user)).status, 400)
+
+  const created = await call('POST', '/reviews', review, tokens.user)
+  assert.equal(created.status, 201)
+  assert.equal(created.body.status, 'Pending')
+  assert.equal(created.body.userName, 'Rahul Kumar')
+  assert.equal((await call('POST', '/reviews', review, tokens.user)).status, 409, 'one review per trek')
+
+  assert.equal((await call('GET', '/reviews?trekId=5')).body.length, 0, 'pending reviews are not public')
+  assert.equal((await call('GET', '/reviews?mine=1', undefined, tokens.user)).body.length, 1)
+  assert.equal((await call('PATCH', `/reviews/${created.body.id}`, { status: 'Approved' }, tokens.user)).status, 403)
+  assert.equal((await call('PATCH', `/reviews/${created.body.id}`, { status: 'Approved' }, tokens.operator)).status, 403)
+  assert.equal((await call('PATCH', `/reviews/${created.body.id}`, { status: 'Approved' }, tokens.admin)).status, 200)
+
+  assert.equal((await call('GET', '/reviews?trekId=5')).body.length, 1)
+  const trek = (await call('GET', '/treks/5')).body
+  assert.equal(trek.rating, 4)
+  assert.equal(trek.reviewCount, 1)
+
+  await call('PATCH', `/reviews/${created.body.id}`, { status: 'Rejected' }, tokens.admin)
+  assert.equal((await call('GET', '/treks/5')).body.reviewCount, 0)
 })
 
 test('auth: forged, tampered and expired tokens are rejected', async () => {
