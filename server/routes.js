@@ -152,10 +152,16 @@ const MAX_LOGIN_FAILURES = 5
 
 const session = user => ({ user, token: issueToken(user) })
 
+function passwordProblem(password) {
+  if (password.length < 8) return 'Password must be at least 8 characters'
+  if (password.length > 128) return 'Password must be at most 128 characters'
+  return null
+}
+
 users.post('/register', async (req, res) => {
   const password = String(req.body.password ?? '')
-  if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' })
-  if (password.length > 128) return res.status(400).json({ error: 'Password must be at most 128 characters' })
+  const problem = passwordProblem(password)
+  if (problem) return res.status(400).json({ error: problem })
   if (req.body.role === 'admin') return res.status(403).json({ error: 'Admin accounts cannot be self-registered' })
   const role = req.body.role === 'operator' ? 'operator' : 'user'
   const user = await User.create({ ...pick(req.body, profileFields), role, id: `u${Date.now()}`, passwordHash: hashPassword(password) })
@@ -175,6 +181,26 @@ users.post('/login', async (req, res) => {
   }
   await LoginFailure.deleteMany({ email })
   res.json(session(user))
+})
+
+// A wrong current password answers 400, not 401: the session itself is still valid. Failures count
+// toward the same lockout as login so a stolen token cannot be used to guess the password.
+users.post('/me/password', requireLogin, async (req, res) => {
+  const { email } = req.user
+  if (await LoginFailure.countDocuments({ email }) >= MAX_LOGIN_FAILURES) {
+    return res.status(429).json({ error: 'Too many failed attempts. Try again in 15 minutes.' })
+  }
+  if (!checkPassword(String(req.body.currentPassword ?? '').slice(0, 128), req.user.passwordHash)) {
+    await LoginFailure.create({ email })
+    return res.status(400).json({ error: 'Current password is incorrect' })
+  }
+  const next = String(req.body.newPassword ?? '')
+  const problem = passwordProblem(next)
+  if (problem) return res.status(400).json({ error: problem })
+  req.user.passwordHash = hashPassword(next)
+  await req.user.save()
+  await LoginFailure.deleteMany({ email })
+  res.json({ message: 'Password updated' })
 })
 
 users.get('/', requireRole('admin'), async (req, res) => {

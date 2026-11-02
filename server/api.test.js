@@ -194,6 +194,17 @@ test('users: profiles and roles are protected', async () => {
   assert.equal((await call('POST', '/treks', newTrek, reg.body.token)).status, 201)
 })
 
+test('users: change password needs the current one and replaces the old', async () => {
+  const reg = await call('POST', '/users/register', { name: 'Pw', email: 'pw@example.com', password: 'first-pass' })
+  const { token } = reg.body
+  assert.equal((await call('POST', '/users/me/password', { currentPassword: 'x', newPassword: 'second-pass' })).status, 401)
+  assert.equal((await call('POST', '/users/me/password', { currentPassword: 'wrong-pass', newPassword: 'second-pass' }, token)).status, 400)
+  assert.equal((await call('POST', '/users/me/password', { currentPassword: 'first-pass', newPassword: 'short' }, token)).status, 400)
+  assert.equal((await call('POST', '/users/me/password', { currentPassword: 'first-pass', newPassword: 'second-pass' }, token)).status, 200)
+  assert.equal((await call('POST', '/users/login', { email: 'pw@example.com', password: 'first-pass' })).status, 401)
+  assert.equal((await call('POST', '/users/login', { email: 'pw@example.com', password: 'second-pass' })).status, 200)
+})
+
 test('auth: forged, tampered and expired tokens are rejected', async () => {
   const [payload, sig] = tokens.user.split('.')
   const forged = Buffer.from(JSON.stringify({ sub: 'admin1', exp: Date.now() + 1e6 })).toString('base64url')

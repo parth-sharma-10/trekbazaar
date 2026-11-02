@@ -11,7 +11,7 @@ interface SettingsProps {
 
 export default function Settings({ navigate, userRole }: SettingsProps) {
   const [activeTab, setActiveTab] = useState('profile')
-  const { updateUser, notify, resetDemo, darkMode, toggleDarkMode } = useStore()
+  const { updateUser, changePassword, notify, resetDemo, darkMode, toggleDarkMode } = useStore()
   const user = useCurrentUser()
   const [profile, setProfile] = useState(user)
   const [photo, setPhoto] = useState<string | null>(null)
@@ -31,14 +31,15 @@ export default function Settings({ navigate, userRole }: SettingsProps) {
     setTimeout(() => setSaved(false), 2000)
   }
 
-  const updatePassword = (e: React.FormEvent) => {
+  const updatePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!passwords.current) return setPasswordError('Enter your current password')
     if (passwords.next.length < 8) return setPasswordError('New password must be at least 8 characters')
     if (passwords.next !== passwords.confirm) return setPasswordError('New passwords do not match')
     setPasswordError('')
+    if (!(await changePassword(passwords.current, passwords.next))) return
     setPasswords({ current: '', next: '', confirm: '' })
-    notify('Password updated (demo)')
+    notify('Password updated')
   }
 
   const tabs = [

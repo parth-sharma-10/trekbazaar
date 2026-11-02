@@ -84,6 +84,7 @@ interface Store extends Prefs {
   register: (profile: Pick<User, 'name' | 'email' | 'phone'> & { password: string; role: UserRole }) => Promise<User | undefined>
   logout: () => void
   updateUser: (patch: Partial<User>) => Promise<User | undefined>
+  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>
   toggleWishlist: (trekId: string) => void
   addBooking: (booking: NewBooking) => Promise<Booking | undefined>
   setBookingStatus: (id: string, status: BookingStatus) => Promise<Booking | undefined>
@@ -200,6 +201,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setPrefs(p => ({ ...p, user: saved }))
         return saved
       }),
+      changePassword: async (currentPassword, newPassword) => !!(await attempt(() =>
+        api.post('/users/me/password', { currentPassword, newPassword }))),
       toggleWishlist: id => setPrefs(p => ({
         ...p,
         wishlist: p.wishlist.includes(id) ? p.wishlist.filter(x => x !== id) : [...p.wishlist, id],
