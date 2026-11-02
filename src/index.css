@@ -67,6 +67,11 @@ html.dark .bg-white {
   background-color: #111827 !important;
 }
 
+/* Translucent pills over photos: text-slate-700 turns light in dark mode, so the pill must turn dark too. */
+html.dark .bg-white\/90 {
+  background-color: rgba(17, 24, 39, 0.85) !important;
+}
+
 html.dark .bg-slate-50 {
   background-color: #0B111A !important;
 }
