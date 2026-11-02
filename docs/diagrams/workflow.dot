@@ -1,0 +1,22 @@
+digraph G {
+  rankdir=TB; bgcolor=white; pad=0.3; nodesep=0.35; ranksep=0.35;
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, fillcolor="#eef5ef", color="#2e7d32"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  start [label="Landing / search", shape=oval, fillcolor="#ffffff"];
+  explore [label="Explore: filter, sort\nGET /api/treks (on load)"];
+  details [label="Trek details: pick departure\nand participants"];
+  step1 [label="Booking step 1: select batch"];
+  step2 [label="Step 2: traveller details\n(client validation)"];
+  step3 [label="Step 3: payment form\n(card / UPI / net banking, simulated)"];
+  post [label="POST /api/bookings\nserver checks trek, recomputes amount,\nMongoose validates, saves"];
+  ok [label="Confirmation page\n+ receipt download"];
+  err [label="Error toast with server message\n(stay on step 3)", fillcolor="#fdecea", color="#c62828"];
+  mine [label="My Bookings / dashboard\ncancel -> PATCH /api/bookings/:id"];
+  op [label="Operator: add / edit / delete trek\nPOST, PUT, DELETE /api/treks"];
+  opb [label="Operator: confirm pending booking\nPATCH /api/bookings/:id"];
+  start -> explore -> details -> step1 -> step2 -> step3 -> post;
+  post -> ok [label="201"]; post -> err [label="400"];
+  ok -> mine;
+  op -> explore [style=dashed, label="new trek visible"];
+  post -> opb [style=dashed, label="appears for operator"];
+}
