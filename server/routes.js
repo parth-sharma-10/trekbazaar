@@ -197,7 +197,9 @@ bookings.delete('/:id', requireRole('admin'), async (req, res) => {
 // ---------- Users ----------
 export const users = express.Router()
 
-const profileFields = ['name', 'email', 'phone', 'city', 'bio']
+// Email is not editable: bookings are tied to the account by it.
+const profileFields = ['name', 'phone', 'city', 'bio']
+const registerFields = [...profileFields, 'email']
 const MAX_LOGIN_FAILURES = 5
 
 const session = user => ({ user, token: issueToken(user) })
@@ -214,7 +216,7 @@ users.post('/register', async (req, res) => {
   if (problem) return res.status(400).json({ error: problem })
   if (req.body.role === 'admin') return res.status(403).json({ error: 'Admin accounts cannot be self-registered' })
   const role = req.body.role === 'operator' ? 'operator' : 'user'
-  const user = await User.create({ ...pick(req.body, profileFields), role, id: `u${Date.now()}`, passwordHash: hashPassword(password) })
+  const user = await User.create({ ...pick(req.body, registerFields), role, id: `u${Date.now()}`, passwordHash: hashPassword(password) })
   res.status(201).json(session(user))
 })
 

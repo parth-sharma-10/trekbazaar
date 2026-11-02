@@ -71,7 +71,7 @@ export const DEMO_PASSWORD = 'trek1234'
 
 function initialPrefs(): Prefs {
   const prefersDark = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false
-  return { user: null, token: null, wishlist: ['1', '4', '5'], darkMode: prefersDark }
+  return { user: null, token: null, wishlist: [], darkMode: prefersDark }
 }
 
 function load(): Prefs {

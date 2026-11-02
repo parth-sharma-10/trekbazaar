@@ -10,8 +10,6 @@ interface UserDashboardProps {
 }
 
 
-const VETERAN_TREKS = 10
-
 export default function UserDashboard({ navigate, userRole }: UserDashboardProps) {
   const { myBookings: bookings, wishlist, treks, findTrek } = useStore()
   const user = useCurrentUser()
@@ -138,17 +136,6 @@ export default function UserDashboard({ navigate, userRole }: UserDashboardProps
                   </button>
                 ))}
               </div>
-            </div>
-
-            {/* Trek badge */}
-            <div className="bg-gradient-to-br from-forest to-green-500 rounded-2xl p-5 text-white">
-              <div className="text-3xl mb-2">🏅</div>
-              <div className="font-display text-xl mb-1">Himalayan Explorer</div>
-              <div className="text-white/70 text-xs mb-3">{completed.length} trek{completed.length === 1 ? '' : 's'} completed</div>
-              <div className="bg-white/20 rounded-full h-2" role="progressbar" aria-valuenow={completed.length} aria-valuemax={VETERAN_TREKS} aria-label="Progress to Veteran status">
-                <div className="bg-white h-2 rounded-full" style={{ width: `${Math.min(100, (completed.length / VETERAN_TREKS) * 100)}%` }} />
-              </div>
-              <div className="text-xs text-white/60 mt-1.5">{Math.max(0, VETERAN_TREKS - completed.length)} more treks to reach Veteran status</div>
             </div>
 
             {/* Recent activity */}
