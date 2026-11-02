@@ -9,13 +9,12 @@ import type { NavigateFn, UserRole } from '../types'
 interface ExploreProps {
   navigate: NavigateFn
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
   query: Query
 }
 
 const PRICE_FLOOR = 3000
 
-export default function Explore({ navigate, userRole, setUserRole, query }: ExploreProps) {
+export default function Explore({ navigate, userRole, query }: ExploreProps) {
   const { treks } = useStore()
   const priceCeiling = Math.max(25000, Math.ceil(Math.max(...treks.map(t => t.price)) / 5000) * 5000)
   const [search, setSearch] = useState(query.q ?? '')
@@ -158,7 +157,7 @@ export default function Explore({ navigate, userRole, setUserRole, query }: Expl
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar navigate={navigate} currentScreen="explore" userRole={userRole} setUserRole={setUserRole} />
+      <Navbar navigate={navigate} currentScreen="explore" userRole={userRole} />
 
       {/* Header */}
       <div className="bg-white border-b border-slate-100">

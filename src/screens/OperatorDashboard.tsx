@@ -7,7 +7,6 @@ import type { NavigateFn, UserRole } from '../types'
 interface OperatorDashboardProps {
   navigate: NavigateFn
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
 }
 
 const shortDate = (offset: number) =>
@@ -26,17 +25,15 @@ const trekSales: Record<string, { bookings: number; revenue: number }> = {
   '4': { bookings: 14, revenue: 252000 },
 }
 
-const OPERATOR_ID = 'op1'
-
-export default function OperatorDashboard({ navigate, userRole, setUserRole }: OperatorDashboardProps) {
-  const { treks, deleteTrek, notify } = useStore()
+export default function OperatorDashboard({ navigate, userRole }: OperatorDashboardProps) {
+  const { treks, deleteTrek, notify, user } = useStore()
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null)
 
   const remove = async (id: string, title: string) => {
     setConfirmingDelete(null)
     if (await deleteTrek(id)) notify(`${title} deleted`)
   }
-  const myTreks = treks.filter(t => t.operatorId === OPERATOR_ID)
+  const myTreks = treks.filter(t => t.operatorId === user?.id)
   const stats = [
     { label: 'Active Treks', value: String(myTreks.length), change: '+1', up: true, icon: '🏔️', color: 'bg-forest-50 text-forest' },
     { label: 'Total Bookings', value: '87', change: '+12', up: true, icon: '📋', color: 'bg-blue-50 text-blue-600' },
@@ -53,7 +50,7 @@ export default function OperatorDashboard({ navigate, userRole, setUserRole }: O
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar navigate={navigate} currentScreen="operator-dashboard" userRole={userRole} setUserRole={setUserRole} />
+      <Navbar navigate={navigate} currentScreen="operator-dashboard" userRole={userRole} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}

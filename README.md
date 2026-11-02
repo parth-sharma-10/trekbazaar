@@ -43,7 +43,7 @@ Live: **https://trekbazaar-eta.vercel.app** (Vercel, with MongoDB Atlas). The de
 
 **Across the app**
 - Hash-based URLs (`#/trek-details?trek=3`). Deep links, the browser Back button and page refresh all work, and the app runs on any static host with no server rewrites.
-- Opening a role-specific screen by URL switches the demo role. You can also use the **View as** switcher in the navbar.
+- Role screens need a signed-in account of that role. A guest opening one by URL is sent to the login page; a signed-in user is sent to their own dashboard.
 - Responsive at phone widths (checked at 381px for every screen). Wide tables scroll horizontally inside their card instead of overflowing the page.
 - Accessibility basics: labelled inputs, `aria-pressed` and `aria-expanded` on toggles, keyboard-reachable trek cards, error messages announced with `role="alert"`, and the hero's bounce animation turns off under `prefers-reduced-motion`.
 
@@ -68,7 +68,8 @@ npm run preview    # serve the production build
 ```bash
 vercel link
 vercel env add MONGO_URI production   # Atlas connection string, including /trekbazaar as the database
-MONGO_URI='<atlas uri>' npm run seed
+vercel env add AUTH_SECRET production # signs login tokens: openssl rand -hex 32
+MONGO_URI='<atlas uri>' SEED_ADMIN_PASSWORD='<private>' npm run seed
 vercel deploy --prod
 ```
 
@@ -81,7 +82,7 @@ src/
   App.tsx            hash router: maps routes to screens, sets the page title, renders the toast
   router.ts          parseHash / toHash (used with react-router-dom's HashRouter)
   api.ts             axios instance and error-message helper
-  store.tsx          React context: loads treks and bookings from the API; user, role, wishlist and theme in localStorage
+  store.tsx          React context: loads treks and bookings from the API; user, session token, wishlist and theme in localStorage
   lib.ts             pure helpers: INR formatting, dates, departure batches, validators
   pricing.js         price breakdown, booking ids and limits, shared with the server
   logic.test.ts      node:test suite for router.ts and lib.ts
@@ -92,7 +93,8 @@ api/index.js         Vercel serverless entry: reuses one MongoDB connection, the
 server/
   index.js           Express app: JSON body parsing, request log, routes, 404 and error handler
   models.js          Mongoose schemas: Trek, Booking, User
-  routes.js          REST routes for /api/treks, /api/bookings, /api/users
+  routes.js          REST routes for /api/treks, /api/bookings, /api/users, with per-role checks
+  auth.js            password hashing, signed session tokens, authenticate and requireRole middleware
   seed.js            resets the database to the demo data
   api.test.js        node:test integration tests against a real MongoDB
 postman/             Postman collection for every endpoint
@@ -100,26 +102,27 @@ postman/             Postman collection for every endpoint
 
 The stack is MongoDB, Express 5, React 19 and Node.js (MERN), with Mongoose 9, axios, react-router-dom 7, TypeScript, Vite 8 and Tailwind CSS v4.
 
-Demo accounts (password `trek1234`): `rahul.kumar@example.com` (trekker), `operator@trekbazaar.in` (operator), `admin@trekbazaar.in` (admin).
+Demo accounts (password `trek1234`): `rahul.kumar@example.com` (trekker), `operator@trekbazaar.in` (operator), `admin@trekbazaar.in` (admin; on a deployed copy its password is whatever `SEED_ADMIN_PASSWORD` was set to).
 
 ## API
 
-| Method | Endpoint | Purpose |
+Send `Authorization: Bearer <token>` with the token returned by register or login. Tokens last 8 hours. The role is read from the database on every request, so a role change applies at once.
+
+| Method | Endpoint | Who may call it |
 |---|---|---|
-| GET | `/api/treks` | List treks (`?state=`, `?difficulty=`, `?operatorId=`) |
-| GET | `/api/treks/:id` | One trek |
-| POST | `/api/treks` | Publish a trek |
-| PUT | `/api/treks/:id` | Edit a trek |
-| DELETE | `/api/treks/:id` | Delete a trek (409 if it has active bookings) |
-| GET | `/api/bookings` | List bookings (`?email=`, `?status=`) |
-| GET | `/api/bookings/:id` | One booking |
-| POST | `/api/bookings` | Create a booking; the server computes the amount |
-| PATCH | `/api/bookings/:id` | Change status (confirm, cancel, complete) |
-| DELETE | `/api/bookings/:id` | Delete a booking |
-| POST | `/api/users/register` | Create an account |
-| POST | `/api/users/login` | Check email and password |
-| GET | `/api/users` | List users (no password hashes) |
-| PUT | `/api/users/:id` | Update a profile |
+| GET | `/api/treks`, `/api/treks/:id` | Anyone (`?state=`, `?difficulty=`, `?operatorId=`) |
+| POST | `/api/treks` | Operator (becomes the owner) or admin |
+| PUT, DELETE | `/api/treks/:id` | The owning operator or an admin; DELETE is 409 while bookings are active |
+| GET | `/api/bookings`, `/api/bookings/:id` | Signed in: a trekker sees their own, an operator those on their treks, an admin all. Others' ids answer 404 |
+| POST | `/api/bookings` | Trekker; the server sets the amount, owner and status |
+| PATCH | `/api/bookings/:id` | Trekker may cancel; operator and admin may confirm, cancel or complete |
+| DELETE | `/api/bookings/:id` | Admin |
+| POST | `/api/users/register` | Anyone; role `user` or `operator`, never `admin` |
+| POST | `/api/users/login` | Anyone; 5 failed attempts per email lock it for 15 minutes |
+| GET | `/api/users` | Admin |
+| PUT | `/api/users/:id` | Yourself, or an admin; only an admin changes a role, and never their own |
+
+Request bodies are copied field by field, so a client cannot set ids, owners, ratings or Mongo operators such as `$unset`.
 
 ## Changes from the original design
 

@@ -7,13 +7,12 @@ import type { NavigateFn, UserRole } from '../types'
 interface UserDashboardProps {
   navigate: NavigateFn
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
 }
 
 
 const VETERAN_TREKS = 10
 
-export default function UserDashboard({ navigate, userRole, setUserRole }: UserDashboardProps) {
+export default function UserDashboard({ navigate, userRole }: UserDashboardProps) {
   const { myBookings: bookings, wishlist, treks, findTrek } = useStore()
   const user = useCurrentUser()
   const upcomingBookings = bookings
@@ -37,7 +36,7 @@ export default function UserDashboard({ navigate, userRole, setUserRole }: UserD
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar navigate={navigate} currentScreen="user-dashboard" userRole={userRole} setUserRole={setUserRole} />
+      <Navbar navigate={navigate} currentScreen="user-dashboard" userRole={userRole} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome */}

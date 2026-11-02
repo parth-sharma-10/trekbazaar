@@ -7,7 +7,6 @@ import type { NavigateFn, UserRole } from '../types'
 interface BookingHistoryProps {
   navigate: NavigateFn
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
 }
 
 const FREE_CANCELLATION_DAYS = 30
@@ -19,7 +18,7 @@ const statusConfig: Record<BookingStatus, { bg: string; text: string }> = {
   Cancelled: { bg: 'bg-slate-100', text: 'text-slate-600' },
 }
 
-export default function BookingHistory({ navigate, userRole, setUserRole }: BookingHistoryProps) {
+export default function BookingHistory({ navigate, userRole }: BookingHistoryProps) {
   const { myBookings: allBookings, findTrek, setBookingStatus, notify } = useStore()
   const [filter, setFilter] = useState('All')
   const [confirmingCancel, setConfirmingCancel] = useState<string | null>(null)
@@ -37,7 +36,7 @@ export default function BookingHistory({ navigate, userRole, setUserRole }: Book
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar navigate={navigate} currentScreen="booking-history" userRole={userRole} setUserRole={setUserRole} />
+      <Navbar navigate={navigate} currentScreen="booking-history" userRole={userRole} />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">

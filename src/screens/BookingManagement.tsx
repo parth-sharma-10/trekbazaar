@@ -7,10 +7,7 @@ import type { NavigateFn, UserRole } from '../types'
 interface BookingManagementProps {
   navigate: NavigateFn
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
 }
-
-const OPERATOR_ID = 'op1'
 
 // Bookings from other trekkers. The signed-in trekker's own bookings are merged in from the store.
 const sampleBookings = [
@@ -28,14 +25,14 @@ const statusConfig: Record<string, { bg: string; text: string }> = {
   Cancelled: { bg: 'bg-slate-100', text: 'text-slate-600' },
 }
 
-export default function BookingManagement({ navigate, userRole, setUserRole }: BookingManagementProps) {
+export default function BookingManagement({ navigate, userRole }: BookingManagementProps) {
   const { bookings, findTrek, setBookingStatus, notify, user } = useStore()
   const [filter, setFilter] = useState('All')
   const [search, setSearch] = useState('')
   const [sampleStatus, setSampleStatus] = useState<Record<string, string>>({})
 
   const ownBookings = bookings
-    .filter(b => findTrek(b.trekId)?.operatorId === OPERATOR_ID)
+    .filter(b => findTrek(b.trekId)?.operatorId === user?.id)
     .map(b => ({ id: b.id, trekker: b.traveller, trek: findTrek(b.trekId)!.title, date: b.date, participants: b.participants, amount: b.amount, status: b.status as string, phone: user?.phone || '+91 98765 43210' }))
   const allBookings = [...ownBookings, ...sampleBookings.map(b => ({ ...b, status: sampleStatus[b.id] ?? b.status }))]
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -57,7 +54,7 @@ export default function BookingManagement({ navigate, userRole, setUserRole }: B
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar navigate={navigate} currentScreen="booking-management" userRole={userRole} setUserRole={setUserRole} />
+      <Navbar navigate={navigate} currentScreen="booking-management" userRole={userRole} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-start justify-between mb-6 flex-wrap gap-4">

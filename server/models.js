@@ -70,6 +70,14 @@ const userSchema = new mongoose.Schema(
   { timestamps: true, toJSON },
 )
 
+// One document per failed login; MongoDB's TTL index deletes each after 15 minutes. Kept in the
+// database rather than memory because serverless instances do not share memory.
+const loginFailureSchema = new mongoose.Schema({
+  email: { type: String, required: true, index: true },
+  createdAt: { type: Date, default: Date.now, expires: 15 * 60 },
+})
+
 export const Trek = mongoose.model('Trek', trekSchema)
+export const LoginFailure = mongoose.model('LoginFailure', loginFailureSchema)
 export const Booking = mongoose.model('Booking', bookingSchema)
 export const User = mongoose.model('User', userSchema)

@@ -6,7 +6,6 @@ import type { NavigateFn, UserRole } from '../types'
 interface AdminDashboardProps {
   navigate: NavigateFn
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
 }
 
 const alerts = [
@@ -23,7 +22,7 @@ const recentUsers = [
   { name: 'Suresh Kumar', email: 'suresh@example.com', role: 'User', joined: '2d ago', treks: 0 },
 ]
 
-export default function AdminDashboard({ navigate, userRole, setUserRole }: AdminDashboardProps) {
+export default function AdminDashboard({ navigate, userRole }: AdminDashboardProps) {
   const { notify } = useStore()
   const [suspended, setSuspended] = useState<string[]>([])
   const toggleSuspend = (email: string, name: string) => {
@@ -42,7 +41,7 @@ export default function AdminDashboard({ navigate, userRole, setUserRole }: Admi
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar navigate={navigate} currentScreen="admin-dashboard" userRole={userRole} setUserRole={setUserRole} />
+      <Navbar navigate={navigate} currentScreen="admin-dashboard" userRole={userRole} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">

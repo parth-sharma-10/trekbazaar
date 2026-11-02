@@ -6,16 +6,15 @@ import type { NavigateFn, UserRole } from '../types'
 interface WishlistProps {
   navigate: NavigateFn
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
 }
 
-export default function Wishlist({ navigate, userRole, setUserRole }: WishlistProps) {
+export default function Wishlist({ navigate, userRole }: WishlistProps) {
   const { treks, wishlist } = useStore()
   const wishlistTreks = treks.filter(t => wishlist.includes(t.id))
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar navigate={navigate} currentScreen="wishlist" userRole={userRole} setUserRole={setUserRole} />
+      <Navbar navigate={navigate} currentScreen="wishlist" userRole={userRole} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">

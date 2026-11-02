@@ -5,7 +5,6 @@ import type { NavigateFn, UserRole } from '../types'
 interface PaymentSuccessProps {
   navigate: NavigateFn
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
   bookingId: string | undefined
 }
 

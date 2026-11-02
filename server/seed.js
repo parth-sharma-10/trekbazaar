@@ -2,11 +2,14 @@
 import mongoose from 'mongoose'
 import { treks } from '../src/data/treks.ts'
 import { addDays, priceBreakdown, today } from '../src/lib.ts'
-import { Booking, Trek, User } from './models.js'
-import { hashPassword } from './routes.js'
+import { Booking, LoginFailure, Trek, User } from './models.js'
+import { hashPassword } from './auth.js'
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/trekbazaar'
 export const DEMO_PASSWORD = 'trek1234'
+// The trekker demo password is public (README, social-login buttons). The admin's must not be on a
+// deployed site, so set SEED_ADMIN_PASSWORD when seeding anything reachable from the internet.
+const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || DEMO_PASSWORD
 
 function booking(id, trekId, offsetDays, participants, status) {
   const trek = treks.find(t => t.id === trekId)
@@ -24,7 +27,7 @@ function booking(id, trekId, offsetDays, participants, status) {
 
 export async function seed() {
   const year = new Date().getFullYear()
-  await Promise.all([Trek.deleteMany({}), Booking.deleteMany({}), User.deleteMany({})])
+  await Promise.all([Trek.deleteMany({}), Booking.deleteMany({}), User.deleteMany({}), LoginFailure.deleteMany({})])
   await Trek.insertMany(treks)
   await Booking.insertMany([
     booking(`TB-${year}-389123`, '1', 47, 2, 'Confirmed'),
@@ -37,7 +40,7 @@ export async function seed() {
   await User.insertMany([
     { id: 'u1', name: 'Rahul Kumar', email: 'rahul.kumar@example.com', role: 'user', phone: '+91 98765 43210', city: 'Delhi', bio: 'Passionate trekker exploring the Himalayas one trail at a time.', passwordHash },
     { id: 'op1', name: 'Himalayan Treks Co.', email: 'operator@trekbazaar.in', role: 'operator', city: 'Dehradun', passwordHash },
-    { id: 'admin1', name: 'TrekBazaar Admin', email: 'admin@trekbazaar.in', role: 'admin', city: 'Mumbai', passwordHash },
+    { id: 'admin1', name: 'TrekBazaar Admin', email: 'admin@trekbazaar.in', role: 'admin', city: 'Mumbai', passwordHash: hashPassword(ADMIN_PASSWORD) },
   ])
   return { treks: treks.length, bookings: 5, users: 3 }
 }

@@ -7,10 +7,9 @@ import type { NavigateFn, UserRole } from '../types'
 interface SettingsProps {
   navigate: NavigateFn
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
 }
 
-export default function Settings({ navigate, userRole, setUserRole }: SettingsProps) {
+export default function Settings({ navigate, userRole }: SettingsProps) {
   const [activeTab, setActiveTab] = useState('profile')
   const { updateUser, notify, resetDemo, darkMode, toggleDarkMode } = useStore()
   const user = useCurrentUser()
@@ -51,7 +50,7 @@ export default function Settings({ navigate, userRole, setUserRole }: SettingsPr
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar navigate={navigate} currentScreen="settings" userRole={userRole} setUserRole={setUserRole} />
+      <Navbar navigate={navigate} currentScreen="settings" userRole={userRole} />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="font-display text-3xl text-slate-900 mb-6">Settings & Profile</h1>
@@ -271,7 +270,7 @@ export default function Settings({ navigate, userRole, setUserRole }: SettingsPr
 
                 <div className="border-t border-slate-100 pt-5">
                   <h3 className="font-semibold text-slate-900 mb-1">Demo data</h3>
-                  <p className="text-xs text-slate-400 mb-3">Treks and bookings are stored on the server. This resets the wishlist, role and theme saved in this browser, and logs you out.</p>
+                  <p className="text-xs text-slate-400 mb-3">Treks and bookings are stored on the server. This resets the wishlist and theme saved in this browser, and logs you out.</p>
                   {confirmReset ? (
                     <div className="flex gap-2">
                       <button onClick={() => { resetDemo(); setConfirmReset(false); navigate('landing') }} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">Yes, reset</button>

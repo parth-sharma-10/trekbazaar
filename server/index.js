@@ -1,12 +1,14 @@
 import { fileURLToPath } from 'node:url'
 import express from 'express'
 import mongoose from 'mongoose'
+import { authenticate } from './auth.js'
 import { bookings, treks, users } from './routes.js'
 
 const PORT = process.env.PORT || 4000
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/trekbazaar'
 
 export const app = express()
+app.disable('x-powered-by')
 
 app.use(express.json({ limit: '1mb' }))
 app.use((req, res, next) => {
@@ -15,6 +17,7 @@ app.use((req, res, next) => {
   next()
 })
 
+app.use('/api', authenticate)
 app.get('/api/health', (req, res) => res.json({ ok: true, db: mongoose.connection.name }))
 app.use('/api/treks', treks)
 app.use('/api/bookings', bookings)

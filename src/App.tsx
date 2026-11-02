@@ -24,7 +24,8 @@ import UserManagement from './screens/UserManagement'
 import OperatorVerification from './screens/OperatorVerification'
 import ReviewsManagement from './screens/ReviewsManagement'
 
-// Screens that only make sense for one role. Opening one by URL switches the demo role.
+// Screens that need a signed-in account of one role. The API enforces the same rules;
+// this only keeps people off screens whose requests would be refused.
 const roleForScreen: Partial<Record<Screen, UserRole>> = {
   'user-dashboard': 'user',
   'booking-history': 'user',
@@ -38,6 +39,9 @@ const roleForScreen: Partial<Record<Screen, UserRole>> = {
   'operator-verification': 'admin',
   'reviews-management': 'admin',
 }
+const loginOnly: Screen[] = ['booking', 'payment-success', 'settings']
+
+const homeFor = { user: 'user-dashboard', operator: 'operator-dashboard', admin: 'admin-dashboard' } as const
 
 const titles: Record<Screen, string> = {
   landing: "Discover India's Greatest Treks",
@@ -62,7 +66,7 @@ const titles: Record<Screen, string> = {
 }
 
 export default function App() {
-  const { role, setRole, toast, findTrek, status, loadError, reload } = useStore()
+  const { user, role, toast, findTrek, status, loadError, reload } = useStore()
   const location = useLocation()
   const routerNavigate = useNavigate()
   const route = parseHash(`#${location.pathname}${location.search}`)
@@ -72,14 +76,21 @@ export default function App() {
   }, [location.pathname, location.search])
 
   const { screen, query } = route
+  const required = roleForScreen[screen]
+  const redirect: Screen | null =
+    (required || loginOnly.includes(screen)) && !user ? 'login'
+    : required && required !== role ? homeFor[role]
+    : null
 
   useEffect(() => {
-    const required = roleForScreen[screen]
-    if (required && required !== role) setRole(required)
+    if (redirect) routerNavigate(toHash(redirect).slice(1), { replace: true })
+  }, [redirect, routerNavigate])
+
+  useEffect(() => {
     const trekTitle = screen === 'trek-details' || screen === 'booking' ? findTrek(query.trek)?.title : undefined
     const page = trekTitle ? (screen === 'booking' ? `Book ${trekTitle}` : trekTitle) : titles[screen]
     document.title = `${page} · TrekBazaar`
-  }, [screen, query.trek, role, setRole, findTrek])
+  }, [screen, query.trek, findTrek])
 
   const navigate: NavigateFn = (next, params) => {
     const hash = toHash(next, params)
@@ -87,7 +98,7 @@ export default function App() {
     else routerNavigate(hash.slice(1))
   }
 
-  const commonProps = { navigate, userRole: role, setUserRole: setRole }
+  const commonProps = { navigate, userRole: role }
 
   if (status !== 'ready') {
     return (
@@ -106,6 +117,7 @@ export default function App() {
   }
 
   const renderScreen = () => {
+    if (redirect) return null
     switch (screen) {
       case 'landing': return <Landing {...commonProps} section={query.section} />
       case 'login': return <Login navigate={navigate} />

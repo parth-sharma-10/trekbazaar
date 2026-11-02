@@ -6,7 +6,6 @@ import type { NavigateFn, UserRole } from '../types'
 interface ReviewsManagementProps {
   navigate: NavigateFn
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
 }
 
 const allReviews = [
@@ -25,7 +24,7 @@ const statusConfig: Record<string, { bg: string; text: string }> = {
   Rejected: { bg: 'bg-slate-100', text: 'text-slate-600' },
 }
 
-export default function ReviewsManagement({ navigate, userRole, setUserRole }: ReviewsManagementProps) {
+export default function ReviewsManagement({ navigate, userRole }: ReviewsManagementProps) {
   const { notify } = useStore()
   const [filter, setFilter] = useState('All')
   const [reviews, setReviews] = useState(allReviews)
@@ -38,7 +37,7 @@ export default function ReviewsManagement({ navigate, userRole, setUserRole }: R
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar navigate={navigate} currentScreen="reviews-management" userRole={userRole} setUserRole={setUserRole} />
+      <Navbar navigate={navigate} currentScreen="reviews-management" userRole={userRole} />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
