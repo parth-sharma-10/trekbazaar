@@ -32,14 +32,14 @@ export type NewBooking = Omit<Booking, 'id' | 'amount' | 'status' | 'email'>
 // Only per-browser preferences are kept in localStorage.
 interface Prefs {
   user: User | null
-  role: UserRole
+  token: string | null
   wishlist: string[]
   darkMode: boolean
 }
 
-const STORAGE_KEY = 'trekbazaar:v2'
+const STORAGE_KEY = 'trekbazaar:v3'
 
-// Shown when nobody is logged in; matches the seeded demo account (password trek1234).
+// The seeded trekker account the social-login buttons sign in to (password trek1234).
 export const DEMO_USER: User = {
   name: 'Rahul Kumar',
   email: 'rahul.kumar@example.com',
@@ -51,7 +51,7 @@ export const DEMO_PASSWORD = 'trek1234'
 
 function initialPrefs(): Prefs {
   const prefersDark = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false
-  return { user: null, role: 'user', wishlist: ['1', '4', '5'], darkMode: prefersDark }
+  return { user: null, token: null, wishlist: ['1', '4', '5'], darkMode: prefersDark }
 }
 
 function load(): Prefs {
@@ -66,7 +66,13 @@ function load(): Prefs {
 
 type LoadState = 'loading' | 'ready' | 'error'
 
+interface Session {
+  user: User
+  token: string
+}
+
 interface Store extends Prefs {
+  role: UserRole
   status: LoadState
   loadError: string | null
   reload: () => void
@@ -74,7 +80,6 @@ interface Store extends Prefs {
   bookings: Booking[]
   myBookings: Booking[]
   findTrek: (id: string | undefined) => Trek | undefined
-  setRole: (role: UserRole) => void
   login: (email: string, password: string) => Promise<User | undefined>
   register: (profile: Pick<User, 'name' | 'email' | 'phone'> & { password: string; role: UserRole }) => Promise<User | undefined>
   logout: () => void
@@ -120,9 +125,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     toastTimer.current = window.setTimeout(() => setToast(null), 3000)
   }, [])
 
+  // Every request carries the session token; the server decides what each role may see and do.
+  useEffect(() => {
+    if (prefs.token) api.defaults.headers.common.Authorization = `Bearer ${prefs.token}`
+    else delete api.defaults.headers.common.Authorization
+  }, [prefs.token])
+
+  useEffect(() => {
+    const id = api.interceptors.response.use(undefined, err => {
+      if (err.response?.status === 401 && err.config?.headers?.Authorization) {
+        setPrefs(p => ({ ...p, user: null, token: null }))
+      }
+      return Promise.reject(err)
+    })
+    return () => api.interceptors.response.eject(id)
+  }, [])
+
   const reload = useCallback(() => {
     setStatus('loading')
-    Promise.all([api.get<Trek[]>('/treks'), api.get<Booking[]>('/bookings')])
+    // Bookings are private, so a guest only loads the public trek list.
+    Promise.all([api.get<Trek[]>('/treks'), prefs.token ? api.get<Booking[]>('/bookings') : { data: [] }])
       .then(([t, b]) => {
         setTreks(t.data)
         setBookings(b.data)
@@ -132,7 +154,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setLoadError(errorMessage(err))
         setStatus('error')
       })
-  }, [])
+  }, [prefs.token])
 
   useEffect(reload, [reload])
 
@@ -147,18 +169,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    const signIn = (user: User) => {
-      setPrefs(p => ({ ...p, user, role: user.role ?? 'user' }))
+    const signIn = ({ user, token }: Session) => {
+      setPrefs(p => ({ ...p, user, token }))
       return user
     }
     const replaceBooking = (b: Booking) => {
       setBookings(list => list.map(x => (x.id === b.id ? b : x)))
       return b
     }
-    const currentEmail = (prefs.user ?? DEMO_USER).email.toLowerCase()
+    const currentEmail = prefs.user?.email.toLowerCase()
 
     return {
       ...prefs,
+      role: prefs.user?.role ?? 'user',
       status,
       loadError,
       reload,
@@ -166,12 +189,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       bookings,
       myBookings: bookings.filter(b => b.email === currentEmail),
       findTrek: id => treks.find(t => t.id === id),
-      setRole: role => setPrefs(p => ({ ...p, role })),
       login: (email, password) => attempt(async () =>
-        signIn((await api.post<User>('/users/login', { email, password })).data)),
+        signIn((await api.post<Session>('/users/login', { email, password })).data)),
       register: profile => attempt(async () =>
-        signIn((await api.post<User>('/users/register', profile)).data)),
-      logout: () => setPrefs(p => ({ ...p, user: null, role: 'user' })),
+        signIn((await api.post<Session>('/users/register', profile)).data)),
+      logout: () => setPrefs(p => ({ ...p, user: null, token: null })),
       updateUser: patch => attempt(async () => {
         const merged = { ...(prefs.user ?? DEMO_USER), ...patch }
         const saved = merged.id ? (await api.put<User>(`/users/${merged.id}`, merged)).data : merged
@@ -183,7 +205,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         wishlist: p.wishlist.includes(id) ? p.wishlist.filter(x => x !== id) : [...p.wishlist, id],
       })),
       addBooking: booking => attempt(async () => {
-        const { data } = await api.post<Booking>('/bookings', { ...booking, email: currentEmail })
+        const { data } = await api.post<Booking>('/bookings', booking)
         setBookings(list => [data, ...list])
         return data
       }),

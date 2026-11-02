@@ -13,7 +13,6 @@ interface BookingFlowProps {
   initialDate?: string
   initialParticipants: number
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
 }
 
 type Errors = Partial<Record<string, string>>
@@ -25,7 +24,7 @@ function FieldError({ message }: { message?: string }) {
   return message ? <p className="text-xs text-red-600 mt-1" role="alert">{message}</p> : null
 }
 
-export default function BookingFlow({ navigate, trekId, initialDate, initialParticipants, userRole, setUserRole }: BookingFlowProps) {
+export default function BookingFlow({ navigate, trekId, initialDate, initialParticipants, userRole }: BookingFlowProps) {
   const { findTrek, user, addBooking } = useStore()
   const trek = findTrek(trekId)
   const batches = getBatches(trekId ?? '')
@@ -53,7 +52,7 @@ export default function BookingFlow({ navigate, trekId, initialDate, initialPart
   if (!trek) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <Navbar navigate={navigate} currentScreen="booking" userRole={userRole} setUserRole={setUserRole} />
+        <Navbar navigate={navigate} currentScreen="booking" userRole={userRole} />
         <div className="max-w-xl mx-auto px-4 py-24 text-center">
           <h1 className="font-display text-3xl text-slate-900 mb-2">Choose a trek first</h1>
           <p className="text-slate-500 mb-6">Pick a trek to see its departures and book a spot.</p>
@@ -130,7 +129,7 @@ export default function BookingFlow({ navigate, trekId, initialDate, initialPart
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar navigate={navigate} currentScreen="booking" userRole={userRole} setUserRole={setUserRole} />
+      <Navbar navigate={navigate} currentScreen="booking" userRole={userRole} />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button onClick={() => navigate('trek-details', { trek: trek.id })} className="text-sm text-slate-500 hover:text-slate-700 mb-6 flex items-center gap-1">

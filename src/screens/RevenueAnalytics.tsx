@@ -5,7 +5,6 @@ import type { NavigateFn, UserRole } from '../types'
 interface RevenueAnalyticsProps {
   navigate: NavigateFn
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
 }
 
 // Twelve months of sample figures, oldest first, labelled relative to the current month.
@@ -29,7 +28,7 @@ const trekPerformance = [
   { name: 'Hampta Pass', bookings: 22, revenue: 215600, rating: 4.7, growth: -5 },
 ]
 
-export default function RevenueAnalytics({ navigate, userRole, setUserRole }: RevenueAnalyticsProps) {
+export default function RevenueAnalytics({ navigate, userRole }: RevenueAnalyticsProps) {
   const [period, setPeriod] = useState<keyof typeof periods>('12M')
   const visible = monthlyData.slice(-periods[period])
   const maxRevenue = Math.max(...visible.map(d => d.revenue))
@@ -38,7 +37,7 @@ export default function RevenueAnalytics({ navigate, userRole, setUserRole }: Re
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar navigate={navigate} currentScreen="revenue-analytics" userRole={userRole} setUserRole={setUserRole} />
+      <Navbar navigate={navigate} currentScreen="revenue-analytics" userRole={userRole} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-start justify-between mb-6 flex-wrap gap-4">

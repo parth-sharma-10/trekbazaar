@@ -8,11 +8,10 @@ import type { NavigateFn, UserRole } from '../types'
 interface AddEditTrekProps {
   navigate: NavigateFn
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
   editTrekId?: string | null
 }
 
-// The demo operator account. A real app would take this from the signed-in operator.
+// Placeholder owner for the local preview only: the API sets operator and operatorId from the session.
 const OPERATOR = { name: 'Himalayan Treks Co.', id: 'op1' }
 const STATES = ['Uttarakhand', 'Himachal Pradesh', 'Ladakh', 'West Bengal', 'Nagaland', 'Sikkim', 'Manipur', 'Arunachal Pradesh']
 const DIFFICULTIES = ['Easy', 'Moderate', 'Difficult', 'Expert'] as const
@@ -98,7 +97,7 @@ function buildTrek(form: Form, id: string, existing: Trek | undefined): Trek {
 const inputClass = (invalid: boolean) =>
   `w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-forest placeholder-slate-400 text-slate-700 ${invalid ? 'border-red-300 bg-red-50/40' : 'border-slate-200'}`
 
-export default function AddEditTrek({ navigate, userRole, setUserRole, editTrekId }: AddEditTrekProps) {
+export default function AddEditTrek({ navigate, userRole, editTrekId }: AddEditTrekProps) {
   const { findTrek, saveTrek, notify } = useStore()
   const existing = findTrek(editTrekId ?? undefined)
   const isEdit = !!existing
@@ -159,7 +158,7 @@ export default function AddEditTrek({ navigate, userRole, setUserRole, editTrekI
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar navigate={navigate} currentScreen="add-trek" userRole={userRole} setUserRole={setUserRole} />
+      <Navbar navigate={navigate} currentScreen="add-trek" userRole={userRole} />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-start justify-between mb-8 flex-wrap gap-4">

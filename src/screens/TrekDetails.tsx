@@ -9,7 +9,6 @@ interface TrekDetailsProps {
   navigate: NavigateFn
   trekId: string | undefined
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
 }
 
 const reviews = [
@@ -25,7 +24,7 @@ const diffColors: Record<string, string> = {
   Expert: 'bg-red-100 text-red-800',
 }
 
-export default function TrekDetails({ navigate, trekId, userRole, setUserRole }: TrekDetailsProps) {
+export default function TrekDetails({ navigate, trekId, userRole }: TrekDetailsProps) {
   const { findTrek, treks, wishlist, toggleWishlist, notify } = useStore()
   const trek = findTrek(trekId)
   const [activeTab, setActiveTab] = useState('overview')
@@ -37,7 +36,7 @@ export default function TrekDetails({ navigate, trekId, userRole, setUserRole }:
   if (!trek) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <Navbar navigate={navigate} currentScreen="trek-details" userRole={userRole} setUserRole={setUserRole} />
+        <Navbar navigate={navigate} currentScreen="trek-details" userRole={userRole} />
         <div className="max-w-xl mx-auto px-4 py-24 text-center">
           <div className="text-5xl mb-4">🧭</div>
           <h1 className="font-display text-3xl text-slate-900 mb-2">Trek not found</h1>
@@ -62,7 +61,7 @@ export default function TrekDetails({ navigate, trekId, userRole, setUserRole }:
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar navigate={navigate} currentScreen="trek-details" userRole={userRole} setUserRole={setUserRole} />
+      <Navbar navigate={navigate} currentScreen="trek-details" userRole={userRole} />
 
       {/* Breadcrumb */}
       <div className="bg-white border-b border-slate-100">

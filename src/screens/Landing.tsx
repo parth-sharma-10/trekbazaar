@@ -9,7 +9,6 @@ import type { NavigateFn, UserRole } from '../types'
 interface LandingProps {
   navigate: NavigateFn
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
   section?: string
 }
 
@@ -66,7 +65,7 @@ const features = [
   },
 ]
 
-export default function Landing({ navigate, userRole, setUserRole, section }: LandingProps) {
+export default function Landing({ navigate, userRole, section }: LandingProps) {
   const [searchDest, setSearchDest] = useState('')
   const [searchDiff, setSearchDiff] = useState('')
   const [searchDuration, setSearchDuration] = useState('')
@@ -83,7 +82,7 @@ export default function Landing({ navigate, userRole, setUserRole, section }: La
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar navigate={navigate} currentScreen="landing" userRole={userRole} setUserRole={setUserRole} />
+      <Navbar navigate={navigate} currentScreen="landing" userRole={userRole} />
 
       {/* Hero */}
       <section className="relative min-h-[92vh] py-24 flex items-center justify-center overflow-hidden bg-slate-800">

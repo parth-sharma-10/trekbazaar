@@ -7,7 +7,6 @@ import type { NavigateFn, UserRole } from '../types'
 interface OperatorVerificationProps {
   navigate: NavigateFn
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
 }
 
 const initialPending = [
@@ -21,7 +20,7 @@ const initialApproved = [
   { id: 'OP101', name: 'Mountain Spirit', contact: 'Anjali Thakur', approvedDate: 'Mar 8, 2024', treks: 3, rating: 4.7 },
 ]
 
-export default function OperatorVerification({ navigate, userRole, setUserRole }: OperatorVerificationProps) {
+export default function OperatorVerification({ navigate, userRole }: OperatorVerificationProps) {
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending')
   const [expanded, setExpanded] = useState<string | null>(null)
   const { notify } = useStore()
@@ -47,7 +46,7 @@ export default function OperatorVerification({ navigate, userRole, setUserRole }
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar navigate={navigate} currentScreen="operator-verification" userRole={userRole} setUserRole={setUserRole} />
+      <Navbar navigate={navigate} currentScreen="operator-verification" userRole={userRole} />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">

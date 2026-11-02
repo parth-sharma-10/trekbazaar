@@ -6,7 +6,6 @@ import type { NavigateFn, UserRole } from '../types'
 interface UserManagementProps {
   navigate: NavigateFn
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
 }
 
 const initialUsers = [
@@ -27,7 +26,7 @@ const statusConfig: Record<string, { bg: string; text: string }> = {
   Pending: { bg: 'bg-amber-100', text: 'text-amber-700' },
 }
 
-export default function UserManagement({ navigate, userRole, setUserRole }: UserManagementProps) {
+export default function UserManagement({ navigate, userRole }: UserManagementProps) {
   const { notify } = useStore()
   const [users, setUsers] = useState(initialUsers)
   const [roleFilter, setRoleFilter] = useState('All')
@@ -50,7 +49,7 @@ export default function UserManagement({ navigate, userRole, setUserRole }: User
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar navigate={navigate} currentScreen="user-management" userRole={userRole} setUserRole={setUserRole} />
+      <Navbar navigate={navigate} currentScreen="user-management" userRole={userRole} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">

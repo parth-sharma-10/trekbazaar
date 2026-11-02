@@ -7,7 +7,6 @@ interface NavbarProps {
   navigate: NavigateFn
   currentScreen: Screen
   userRole: UserRole
-  setUserRole: (role: UserRole) => void
 }
 
 const userNav = [
@@ -31,7 +30,7 @@ const adminNav = [
   { label: 'Reviews', screen: 'reviews-management' as Screen },
 ]
 
-export default function Navbar({ navigate, currentScreen, userRole, setUserRole }: NavbarProps) {
+export default function Navbar({ navigate, currentScreen, userRole }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const isPublicScreen = ['landing', 'explore', 'trek-details', 'login', 'signup'].includes(currentScreen)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -45,12 +44,11 @@ export default function Navbar({ navigate, currentScreen, userRole, setUserRole 
     return () => window.removeEventListener('keydown', onKey)
   }, [profileOpen, mobileOpen])
   const { user, logout, darkMode, toggleDarkMode } = useStore()
-  const displayName = userRole === 'admin' ? 'Admin' : userRole === 'operator' ? 'Himalayan Treks Co.' : user?.name ?? 'Rahul Kumar'
+  const displayName = user?.name ?? 'Guest'
   const showAuthButtons = isPublicScreen && !user
 
   const navItems = userRole === 'operator' ? operatorNav : userRole === 'admin' ? adminNav : userNav
 
-  const roleColor = userRole === 'admin' ? 'bg-purple-600' : userRole === 'operator' ? 'bg-blue-600' : 'bg-forest'
 
   return (
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm">
@@ -89,23 +87,6 @@ export default function Navbar({ navigate, currentScreen, userRole, setUserRole 
 
           {/* Right side */}
           <div className="flex items-center gap-3">
-            {/* Role switcher demo */}
-            <div className="hidden sm:flex items-center gap-1 bg-slate-100 rounded-lg p-1 text-xs" role="group" aria-label="Demo: view as role">
-              <span className="hidden lg:inline px-1.5 text-slate-400 font-medium">View as</span>
-              {(['user', 'operator', 'admin'] as UserRole[]).map(role => (
-                <button
-                  key={role}
-                  onClick={() => {
-                    setUserRole(role)
-                    navigate(role === 'operator' ? 'operator-dashboard' : role === 'admin' ? 'admin-dashboard' : 'user-dashboard')
-                  }}
-                  className={`px-2.5 py-1 rounded-md font-medium capitalize transition-colors ${userRole === role ? `${roleColor} text-white` : 'text-slate-600 hover:text-slate-900'}`}
-                >
-                  {role}
-                </button>
-              ))}
-            </div>
-
             {/* Dark mode toggle */}
             <button
               type="button"
@@ -185,22 +166,6 @@ export default function Navbar({ navigate, currentScreen, userRole, setUserRole 
                   {item.label}
                 </button>
               ))}
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mt-3 px-4">View as</div>
-              <div className="flex gap-2 mt-1.5 px-4">
-                {(['user', 'operator', 'admin'] as UserRole[]).map(role => (
-                  <button
-                    key={role}
-                    onClick={() => {
-                      setUserRole(role)
-                      navigate(role === 'operator' ? 'operator-dashboard' : role === 'admin' ? 'admin-dashboard' : 'user-dashboard')
-                      setMobileOpen(false)
-                    }}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium capitalize ${userRole === role ? `${roleColor} text-white` : 'bg-slate-100 text-slate-600'}`}
-                  >
-                    {role}
-                  </button>
-                ))}
-              </div>
               <div className="flex items-center justify-between mt-4 px-4 py-2 bg-slate-100/60 rounded-xl">
                 <span className="text-xs font-semibold text-slate-600">Appearance</span>
                 <button
