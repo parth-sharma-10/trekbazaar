@@ -1,6 +1,6 @@
 export type Screen =
   | 'landing' | 'login' | 'signup'
-  | 'explore' | 'trek-details' | 'booking' | 'payment-success'
+  | 'explore' | 'trek-details' | 'booking' | 'booking-requested'
   | 'user-dashboard' | 'booking-history' | 'wishlist' | 'settings'
   | 'operator-dashboard' | 'add-trek' | 'booking-management' | 'revenue-analytics'
   | 'admin-dashboard' | 'user-management' | 'operator-verification' | 'reviews-management'

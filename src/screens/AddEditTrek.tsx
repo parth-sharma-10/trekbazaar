@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Navbar from '../components/Navbar'
 import { destinations, type Trek } from '../data/treks'
 import { useStore } from '../store'
-import { addDays, formatDate, today } from '../lib'
+import { formatDate, today } from '../lib'
 import type { NavigateFn, UserRole } from '../types'
 
 interface AddEditTrekProps {
@@ -11,14 +11,13 @@ interface AddEditTrekProps {
   editTrekId?: string | null
 }
 
-// Placeholder owner for the local preview only: the API sets operator and operatorId from the session.
-const OPERATOR = { name: 'Himalayan Treks Co.', id: 'op1' }
 const STATES = ['Uttarakhand', 'Himachal Pradesh', 'Ladakh', 'West Bengal', 'Nagaland', 'Sikkim', 'Manipur', 'Arunachal Pradesh']
 const DIFFICULTIES = ['Easy', 'Moderate', 'Difficult', 'Expert'] as const
 const DESCRIPTION_LIMIT = 500
 
 type Form = Record<'title' | 'description' | 'state' | 'location' | 'difficulty' | 'duration' | 'maxAltitude' | 'groupSizeMin' | 'groupSizeMax' | 'price' | 'meetingPoint' | 'bestMonths', string>
-type Section = 'basic' | 'details' | 'pricing' | 'media'
+type Section = 'basic' | 'details' | 'pricing'
+type DepartureDraft = { date: string; seats: number; booked: number }
 
 function formFromTrek(trek: Trek | undefined): Form {
   const [, min = '', max = ''] = trek?.groupSize.match(/(\d+)\D+(\d+)/) ?? []
@@ -60,7 +59,9 @@ function validate(form: Form): { errors: Partial<Record<keyof Form, string>>; se
   return { errors, section }
 }
 
-function buildTrek(form: Form, id: string, existing: Trek | undefined): Trek {
+// The API sets the owner from the session for operators and computes rating and seats left;
+// the placeholders here only satisfy the Trek type.
+function buildTrek(form: Form, id: string, existing: Trek | undefined, departures: DepartureDraft[]): Trek {
   const days = Number(form.duration)
   const image = existing?.image ?? destinations.find(d => d.name === form.state)?.image ?? destinations[0].image
   const min = form.groupSizeMin || '1'
@@ -88,9 +89,10 @@ function buildTrek(form: Form, id: string, existing: Trek | undefined): Trek {
     bestMonths: form.bestMonths.trim() || 'Year-round',
     meetingPoint: form.meetingPoint.trim(),
     groupSize: `${min}–${max} people`,
-    operator: existing?.operator ?? OPERATOR.name,
-    operatorId: existing?.operatorId ?? OPERATOR.id,
+    operator: existing?.operator ?? '',
+    operatorId: existing?.operatorId ?? '',
     image,
+    departures: departures.map(({ date, seats }) => ({ date, seats, seatsLeft: seats })),
   }
 }
 
@@ -104,9 +106,10 @@ export default function AddEditTrek({ navigate, userRole, editTrekId }: AddEditT
   const [activeSection, setActiveSection] = useState<Section>('basic')
   const [form, setForm] = useState<Form>(() => formFromTrek(existing))
   const [errors, setErrors] = useState<Partial<Record<keyof Form, string>>>({})
-  const [batches, setBatches] = useState(() => [21, 42, 63].map(d => addDays(today(), d)))
-  const [newBatch, setNewBatch] = useState('')
-  const [photos, setPhotos] = useState<string[]>(existing?.gallery ?? [])
+  const [departures, setDepartures] = useState<DepartureDraft[]>(() =>
+    (existing?.departures ?? []).map(d => ({ date: d.date, seats: d.seats, booked: d.seats - d.seatsLeft })))
+  const [newDate, setNewDate] = useState('')
+  const [newSeats, setNewSeats] = useState('12')
 
   const set = (key: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const value = e.target.value
@@ -136,24 +139,25 @@ export default function AddEditTrek({ navigate, userRole, editTrekId }: AddEditT
       notify('Fix the highlighted fields before publishing')
       return
     }
-    const saved = await saveTrek(buildTrek(form, existing?.id ?? '', existing), !isEdit)
+    const saved = await saveTrek(buildTrek(form, existing?.id ?? '', existing, departures), !isEdit)
     if (!saved) return
     notify(isEdit ? 'Trek updated' : 'Trek published. It is now live on Explore.')
     navigate('trek-details', { trek: saved.id })
   }
 
-  const addBatch = () => {
-    if (!newBatch || newBatch < today()) return notify('Pick a future date for the new batch')
-    if (batches.includes(newBatch)) return notify('That date already has a batch')
-    setBatches(b => [...b, newBatch].sort())
-    setNewBatch('')
+  const addDeparture = () => {
+    const seats = Number(newSeats)
+    if (!newDate || newDate < today()) return notify('Pick a future date for the departure')
+    if (departures.some(d => d.date === newDate)) return notify('That date already has a departure')
+    if (!Number.isInteger(seats) || seats < 1 || seats > 100) return notify('Seats must be between 1 and 100')
+    setDepartures(list => [...list, { date: newDate, seats, booked: 0 }].sort((a, b) => a.date.localeCompare(b.date)))
+    setNewDate('')
   }
 
   const sections: { id: Section; label: string; icon: string }[] = [
     { id: 'basic', label: 'Basic Info', icon: '📝' },
     { id: 'details', label: 'Trek Details', icon: '🏔️' },
     { id: 'pricing', label: 'Pricing & Dates', icon: '💰' },
-    { id: 'media', label: 'Photos', icon: '📸' },
   ]
 
   return (
@@ -170,7 +174,6 @@ export default function AddEditTrek({ navigate, userRole, editTrekId }: AddEditT
             <h1 className="font-display text-3xl text-slate-900">{isEdit ? 'Edit Trek' : 'Add New Trek'}</h1>
           </div>
           <div className="flex gap-3">
-            <button onClick={() => notify('Draft saved on this device (demo)')} className="border border-slate-200 text-slate-700 px-5 py-2.5 rounded-full text-sm font-medium hover:bg-slate-50 transition-colors">Save Draft</button>
             <button onClick={handlePublish} className="px-6 py-2.5 rounded-full text-sm font-semibold transition-all bg-forest hover:bg-forest-dark text-white">
               {isEdit ? 'Update Trek' : 'Publish Trek'}
             </button>
@@ -230,6 +233,7 @@ export default function AddEditTrek({ navigate, userRole, editTrekId }: AddEditT
                   <input {...field('meetingPoint')} placeholder="e.g. Rishikesh Bus Stand" />
                   {error('meetingPoint')}
                 </div>
+                <p className="text-xs text-slate-400">The cover photo is a stock image of the state you pick.</p>
               </>
             )}
 
@@ -275,7 +279,7 @@ export default function AddEditTrek({ navigate, userRole, editTrekId }: AddEditT
 
             {activeSection === 'pricing' && (
               <>
-                <h2 className="font-semibold text-slate-900 text-lg">Pricing & Batch Dates</h2>
+                <h2 className="font-semibold text-slate-900 text-lg">Pricing & Departures</h2>
                 <div>
                   {label('price', 'Price per Person (₹) *')}
                   <input {...field('price')} type="number" min={0} step={100} placeholder="14500" />
@@ -284,21 +288,26 @@ export default function AddEditTrek({ navigate, userRole, editTrekId }: AddEditT
                 <div>
                   <div className="flex items-end justify-between gap-3 mb-3 flex-wrap">
                     <span className="text-sm font-medium text-slate-700">Departure Dates</span>
-                    <div className="flex gap-2">
-                      <input type="date" min={today()} value={newBatch} onChange={e => setNewBatch(e.target.value)} aria-label="New batch date" className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-forest" />
-                      <button onClick={addBatch} className="text-xs text-forest hover:text-forest-dark font-medium whitespace-nowrap">+ Add Batch</button>
+                    <div className="flex gap-2 items-center">
+                      <input type="date" min={today()} value={newDate} onChange={e => setNewDate(e.target.value)} aria-label="New departure date" className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-forest" />
+                      <input type="number" min={1} max={100} value={newSeats} onChange={e => setNewSeats(e.target.value)} aria-label="Seats" className="w-16 border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-forest" />
+                      <button onClick={addDeparture} className="text-xs text-forest hover:text-forest-dark font-medium whitespace-nowrap">+ Add</button>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    {batches.length === 0 && <p className="text-sm text-slate-400">No departures scheduled.</p>}
-                    {batches.map(date => (
-                      <div key={date} className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3">
-                        <div className="text-sm font-medium text-slate-800">{formatDate(date)}</div>
+                    {departures.length === 0 && <p className="text-sm text-slate-400">No departures scheduled. Trekkers can only book a listed date.</p>}
+                    {departures.map(d => (
+                      <div key={d.date} className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3">
+                        <div className="text-sm font-medium text-slate-800">{formatDate(d.date)}</div>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-700">{form.groupSizeMax || 12} spots</span>
-                          <button onClick={() => setBatches(b => b.filter(x => x !== date))} aria-label={`Remove ${formatDate(date)} batch`} className="text-slate-400 hover:text-red-500 transition-colors">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                          </button>
+                          <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-700">{d.booked} / {d.seats} booked</span>
+                          {d.booked === 0 ? (
+                            <button onClick={() => setDepartures(list => list.filter(x => x.date !== d.date))} aria-label={`Remove ${formatDate(d.date)} departure`} className="text-slate-400 hover:text-red-500 transition-colors">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                          ) : (
+                            <span className="text-xs text-slate-400" title="Cancel its bookings before removing it">has bookings</span>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -307,41 +316,6 @@ export default function AddEditTrek({ navigate, userRole, editTrekId }: AddEditT
               </>
             )}
 
-            {activeSection === 'media' && (
-              <>
-                <h2 className="font-semibold text-slate-900 text-lg">Trek Photos</h2>
-                <label className="block border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:border-forest transition-colors cursor-pointer focus-within:border-forest">
-                  <div className="text-4xl mb-3" aria-hidden="true">📸</div>
-                  <p className="font-medium text-slate-700 mb-1">Click to upload photos</p>
-                  <p className="text-xs text-slate-400">JPG or PNG, up to 5MB each. Previews stay on this device in the demo.</p>
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg"
-                    multiple
-                    className="sr-only"
-                    onChange={e => {
-                      const files = [...(e.target.files ?? [])]
-                      const tooBig = files.filter(f => f.size > 5 * 1024 * 1024)
-                      if (tooBig.length) notify(`${tooBig.length} photo(s) over 5MB were skipped`)
-                      setPhotos(p => [...p, ...files.filter(f => f.size <= 5 * 1024 * 1024).map(f => URL.createObjectURL(f))])
-                      e.target.value = ''
-                    }}
-                  />
-                </label>
-                {photos.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {photos.map(src => (
-                      <div key={src} className="aspect-video rounded-xl overflow-hidden relative group bg-slate-200">
-                        <img src={src} alt="" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex items-center justify-center">
-                          <button onClick={() => setPhotos(p => p.filter(x => x !== src))} className="bg-red-500 text-white text-xs px-2 py-1 rounded-lg">Remove</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
           </div>
         </div>
       </div>

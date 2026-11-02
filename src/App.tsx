@@ -10,7 +10,7 @@ import SignUp from './screens/SignUp'
 import Explore from './screens/Explore'
 import TrekDetails from './screens/TrekDetails'
 import BookingFlow from './screens/BookingFlow'
-import PaymentSuccess from './screens/PaymentSuccess'
+import BookingRequested from './screens/BookingRequested'
 import UserDashboard from './screens/UserDashboard'
 import BookingHistory from './screens/BookingHistory'
 import Wishlist from './screens/Wishlist'
@@ -24,22 +24,22 @@ import UserManagement from './screens/UserManagement'
 import OperatorVerification from './screens/OperatorVerification'
 import ReviewsManagement from './screens/ReviewsManagement'
 
-// Screens that need a signed-in account of one role. The API enforces the same rules;
+// Screens that need a signed-in account of one of these roles. The API enforces the same rules;
 // this only keeps people off screens whose requests would be refused.
-const roleForScreen: Partial<Record<Screen, UserRole>> = {
-  'user-dashboard': 'user',
-  'booking-history': 'user',
-  wishlist: 'user',
-  'operator-dashboard': 'operator',
-  'add-trek': 'operator',
-  'booking-management': 'operator',
-  'revenue-analytics': 'operator',
-  'admin-dashboard': 'admin',
-  'user-management': 'admin',
-  'operator-verification': 'admin',
-  'reviews-management': 'admin',
+const roleForScreen: Partial<Record<Screen, UserRole[]>> = {
+  'user-dashboard': ['user'],
+  'booking-history': ['user'],
+  wishlist: ['user'],
+  'operator-dashboard': ['operator'],
+  'add-trek': ['operator', 'admin'],
+  'booking-management': ['operator', 'admin'],
+  'revenue-analytics': ['operator'],
+  'admin-dashboard': ['admin'],
+  'user-management': ['admin'],
+  'operator-verification': ['admin'],
+  'reviews-management': ['admin'],
 }
-const loginOnly: Screen[] = ['booking', 'payment-success', 'settings']
+const loginOnly: Screen[] = ['booking', 'booking-requested', 'settings']
 
 const homeFor = { user: 'user-dashboard', operator: 'operator-dashboard', admin: 'admin-dashboard' } as const
 
@@ -50,7 +50,7 @@ const titles: Record<Screen, string> = {
   explore: 'Explore Treks',
   'trek-details': 'Trek Details',
   booking: 'Book Your Trek',
-  'payment-success': 'Booking Confirmed',
+  'booking-requested': 'Booking Requested',
   'user-dashboard': 'Dashboard',
   'booking-history': 'My Bookings',
   wishlist: 'Wishlist',
@@ -58,7 +58,7 @@ const titles: Record<Screen, string> = {
   'operator-dashboard': 'Operator Dashboard',
   'add-trek': 'Manage Trek',
   'booking-management': 'Booking Management',
-  'revenue-analytics': 'Revenue Analytics',
+  'revenue-analytics': 'Booking Analytics',
   'admin-dashboard': 'Admin Dashboard',
   'user-management': 'User Management',
   'operator-verification': 'Operator Verification',
@@ -79,7 +79,7 @@ export default function App() {
   const required = roleForScreen[screen]
   const redirect: Screen | null =
     (required || loginOnly.includes(screen)) && !user ? 'login'
-    : required && required !== role ? homeFor[role]
+    : required && !required.includes(role) ? homeFor[role]
     : null
 
   useEffect(() => {
@@ -125,7 +125,7 @@ export default function App() {
       case 'explore': return <Explore {...commonProps} query={query} />
       case 'trek-details': return <TrekDetails {...commonProps} trekId={query.trek} />
       case 'booking': return <BookingFlow {...commonProps} trekId={query.trek} initialDate={query.date} initialParticipants={Number(query.pax) || 1} />
-      case 'payment-success': return <PaymentSuccess {...commonProps} bookingId={query.booking} />
+      case 'booking-requested': return <BookingRequested {...commonProps} bookingId={query.booking} />
       case 'user-dashboard': return <UserDashboard {...commonProps} />
       case 'booking-history': return <BookingHistory {...commonProps} />
       case 'wishlist': return <Wishlist {...commonProps} />

@@ -19,12 +19,12 @@ Live: **https://trekbazaar-eta.vercel.app** (Vercel, with MongoDB Atlas). The de
 **Trekkers**
 - Search from the landing page, or use the quick tags and destination tiles. All of them open Explore pre-filtered.
 - On Explore, filter by text, difficulty, duration, maximum price and state. Sort the results, and switch between grid and list views.
-- The trek page has a gallery, tabs (overview, itinerary, inclusions, reviews), a departure picker and a live price breakdown.
-- Booking is a three-step flow: choose a batch, enter traveller details, then pay by card, UPI or net banking. Each step is validated. The booking is saved and appears on the dashboard and in My Bookings.
-- The confirmation page shows the real booking. You can download a receipt as a `.txt` file.
-- My Bookings has status filters, and you can cancel a booking (with a confirm step).
-- The wishlist is shared across every screen and kept after a reload.
-- Settings: edit your profile and preview a photo; password validation; notification and 2FA toggles; region preferences; appearance / dark mode toggle; a reset for the demo data.
+- The trek page has a gallery, tabs (overview, itinerary, inclusions, reviews), the operator's scheduled departures with live seats left, and a price breakdown.
+- Booking is a request, not a payment: choose a departure, enter traveller and safety details, review, send. It is stored as Pending until the operator confirms it. No payment is taken anywhere in the app.
+- The confirmation page shows the stored request and its status. You can download a summary as a `.txt` file.
+- My Bookings has status filters, cancellation (with a confirm step), and a review form on completed trips. Reviews go public after an admin approves them.
+- The wishlist is shared across every screen and kept in this browser.
+- Settings: edit your profile, change your password, toggle dark mode, clear this browser's saved data.
 
 **Design & Theme Enhancements**
 - **Dark Mode**: Complete system-wide dark mode support with automatic system preference detection (`prefers-color-scheme`), quick toggle in the top navigation bar, mobile menu switcher, and settings preference option. Preference is persisted in `localStorage`.
@@ -32,14 +32,18 @@ Live: **https://trekbazaar-eta.vercel.app** (Vercel, with MongoDB Atlas). The de
 - **Accessible Contrast**: High-contrast dark theme tokens tailored for optimal readability across all 19 screens, form controls, tables, badges, and modals.
 
 **Operators**
-- Add or edit a trek, with per-field validation. A published trek appears on Explore right away and can be booked.
-- Booking management: search, status filters, and confirming pending bookings. Bookings you make as a trekker on this operator's treks show up here.
-- Revenue analytics with a working 3M / 6M / 12M period switch (sample data).
+- A new operator account must be verified by an admin before it can publish.
+- Add or edit a trek, with per-field validation, and manage its departures and seats. A departure cannot be cut below the seats already booked.
+- Booking management: confirm or decline requests, mark trips completed, and see each trekker's contact and safety details.
+- Booking analytics (3M / 6M / 12M) worked out from the operator's own bookings.
 
 **Admins**
-- User management: search, filter, suspend and reinstate.
-- Operator verification: approve, reject and revoke, with each list updating.
-- Review moderation: approve, flag and reject.
+- Dashboard figures, alerts and the newest accounts come from the database.
+- User management: search, filter, change a role, suspend, reinstate, delete.
+- Operator verification: verify or revoke operator accounts.
+- Review moderation: approve or reject. Ratings shown anywhere in the app are averages of approved reviews.
+
+Every number and list on these screens comes from MongoDB through the API. Nothing is sample data.
 
 **Across the app**
 - Hash-based URLs (`#/trek-details?trek=3`). Deep links, the browser Back button and page refresh all work, and the app runs on any static host with no server rewrites.
@@ -110,19 +114,23 @@ Send `Authorization: Bearer <token>` with the token returned by register or logi
 
 | Method | Endpoint | Who may call it |
 |---|---|---|
-| GET | `/api/treks`, `/api/treks/:id` | Anyone (`?state=`, `?difficulty=`, `?operatorId=`) |
-| POST | `/api/treks` | Operator (becomes the owner) or admin |
+| GET | `/api/treks`, `/api/treks/:id` | Anyone (`?state=`, `?difficulty=`, `?operatorId=`). Rating, review count and seats left are computed |
+| POST | `/api/treks` | Verified operator (becomes the owner) or admin |
 | PUT, DELETE | `/api/treks/:id` | The owning operator or an admin; DELETE is 409 while bookings are active |
 | GET | `/api/bookings`, `/api/bookings/:id` | Signed in: a trekker sees their own, an operator those on their treks, an admin all. Others' ids answer 404 |
-| POST | `/api/bookings` | Trekker; the server sets the amount, owner and status |
+| POST | `/api/bookings` | Trekker, on a scheduled departure with enough seats; the server sets the amount, owner and Pending status |
 | PATCH | `/api/bookings/:id` | Trekker may cancel; operator and admin may confirm, cancel or complete |
 | DELETE | `/api/bookings/:id` | Admin |
 | POST | `/api/users/register` | Anyone; role `user` or `operator`, never `admin` |
 | POST | `/api/users/login` | Anyone; 5 failed attempts per email lock it for 15 minutes |
 | GET | `/api/users` | Admin |
-| PUT | `/api/users/:id` | Yourself, or an admin; only an admin changes a role, and never their own |
+| GET | `/api/users/me` | Signed in; the current account as stored |
+| PUT | `/api/users/:id` | Yourself (name, phone, city, bio), or an admin; only an admin changes role, verification or suspension, and never on their own account |
 | DELETE | `/api/users/:id` | Admin, never their own account |
 | POST | `/api/users/me/password` | Signed in; needs `currentPassword`, wrong guesses count toward the login lockout |
+| GET | `/api/reviews` | Anyone sees approved reviews (`?trekId=`); an admin sees all (`?status=`); `?mine=1` returns your own |
+| POST | `/api/reviews` | Trekker with a completed booking on that trek, once per trek |
+| PATCH | `/api/reviews/:id` | Admin; `Approved` or `Rejected` |
 
 Request bodies are copied field by field, so a client cannot set ids, owners, ratings or Mongo operators such as `$unset`.
 

@@ -139,6 +139,16 @@ html.dark .text-orange-800 { color: #FDBA74 !important; }
 html.dark .bg-red-100 { background-color: rgba(239, 68, 68, 0.2) !important; }
 html.dark .text-red-800 { color: #FCA5A5 !important; }
 
+/* Dark mode notice boxes: the pale -50 tints would leave the light text above unreadable */
+html.dark .bg-green-50 { background-color: rgba(34, 197, 94, 0.12) !important; }
+html.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.12) !important; }
+html.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.12) !important; }
+html.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.12) !important; }
+html.dark .border-green-100,
+html.dark .border-amber-100,
+html.dark .border-blue-100,
+html.dark .border-red-100 { border-color: rgba(255, 255, 255, 0.08) !important; }
+
 /* Dark mode inputs, selects, textareas */
 html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 html.dark select,

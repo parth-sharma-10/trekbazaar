@@ -1,17 +1,14 @@
 import type { NavigateFn } from '../types'
-import { useStore } from '../store'
 
 interface FooterProps {
   navigate: NavigateFn
 }
 
 export default function Footer({ navigate }: FooterProps) {
-  const { notify } = useStore()
-  const placeholder = (label: string) => () => notify(`${label} is not part of this demo yet.`)
   return (
     <footer className="bg-slate-900 text-slate-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
           <div className="col-span-2">
             <button onClick={() => navigate('landing')} className="flex items-center gap-2.5 mb-4">
               <div className="w-8 h-8 bg-forest rounded-xl flex items-center justify-center">
@@ -21,16 +18,9 @@ export default function Footer({ navigate }: FooterProps) {
               </div>
               <span className="font-bold text-white text-lg">Trek<span className="text-green-400">Bazaar</span></span>
             </button>
-            <p className="text-sm text-slate-400 leading-relaxed max-w-xs mb-5">
-              India's most trusted trekking marketplace. Discover verified treks, certified operators, and unforgettable Himalayan adventures.
+            <p className="text-sm text-slate-400 leading-relaxed max-w-xs">
+              A marketplace for Indian treks: browse listings, request a seat, and let the operator confirm it.
             </p>
-            <div className="flex gap-3">
-              {['instagram', 'twitter', 'youtube', 'facebook'].map(social => (
-                <button key={social} onClick={placeholder(`TrekBazaar on ${social}`)} aria-label={social} className="w-9 h-9 bg-slate-800 hover:bg-forest rounded-full flex items-center justify-center transition-colors">
-                  <span className="text-xs text-slate-300">{social[0].toUpperCase()}</span>
-                </button>
-              ))}
-            </div>
           </div>
 
           <div>
@@ -52,38 +42,23 @@ export default function Footer({ navigate }: FooterProps) {
           </div>
 
           <div>
-            <h4 className="text-white font-semibold text-sm mb-4">Company</h4>
+            <h4 className="text-white font-semibold text-sm mb-4">Accounts</h4>
             <ul className="space-y-2.5">
-              {['About Us', 'How It Works', 'Safety Standards', 'Press', 'Careers'].map(link => (
-                <li key={link}>
-                  <button onClick={placeholder(link)} className="text-sm text-slate-400 hover:text-white transition-colors">{link}</button>
-                </li>
-              ))}
-              <li>
-                <button onClick={() => navigate('signup', { role: 'operator' })} className="text-sm text-slate-400 hover:text-white transition-colors">For Operators</button>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-white font-semibold text-sm mb-4">Support</h4>
-            <ul className="space-y-2.5">
-              {['Help Centre', 'Cancellation Policy', 'Booking Guide', 'Insurance', 'Emergency', 'Contact Us'].map(link => (
-                <li key={link}>
-                  <button onClick={placeholder(link)} className="text-sm text-slate-400 hover:text-white transition-colors">{link}</button>
+              {[
+                { label: 'Log in', screen: 'login' as const, params: {} },
+                { label: 'Create an account', screen: 'signup' as const, params: {} },
+                { label: 'For Operators', screen: 'signup' as const, params: { role: 'operator' } },
+              ].map(({ label, screen, params }) => (
+                <li key={label}>
+                  <button onClick={() => navigate(screen, params)} className="text-sm text-slate-400 hover:text-white transition-colors">{label}</button>
                 </li>
               ))}
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-slate-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-slate-500">© {new Date().getFullYear()} TrekBazaar Technologies Pvt. Ltd. All rights reserved.</p>
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-            {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map(link => (
-              <button key={link} onClick={placeholder(link)} className="text-xs text-slate-500 hover:text-slate-300 transition-colors">{link}</button>
-            ))}
-          </div>
+        <div className="border-t border-slate-800 pt-8">
+          <p className="text-xs text-slate-500">© {new Date().getFullYear()} TrekBazaar, a student MERN project.</p>
         </div>
       </div>
     </footer>

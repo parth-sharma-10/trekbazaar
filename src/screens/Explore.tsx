@@ -204,7 +204,7 @@ export default function Explore({ navigate, userRole, query }: ExploreProps) {
                   aria-label="Sort treks"
                   className="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-forest bg-white"
                 >
-                  <option value="popular">Most Popular</option>
+                  <option value="popular">Most Reviewed</option>
                   <option value="rating">Highest Rated</option>
                   <option value="price-asc">Price: Low to High</option>
                   <option value="price-desc">Price: High to Low</option>
@@ -291,7 +291,7 @@ export default function Explore({ navigate, userRole, query }: ExploreProps) {
                           <div className="flex items-center gap-x-4 gap-y-1 text-xs text-slate-500 flex-wrap">
                             <span>{trek.duration}</span>
                             <span>↑ {trek.maxAltitude}</span>
-                            <span>⭐ {trek.rating} ({trek.reviewCount})</span>
+                            <span>{trek.reviewCount > 0 ? `⭐ ${trek.rating} (${trek.reviewCount})` : 'No reviews yet'}</span>
                           </div>
                           <span className="font-bold text-slate-900">₹{trek.price.toLocaleString('en-IN')}</span>
                         </div>

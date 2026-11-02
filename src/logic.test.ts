@@ -2,9 +2,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { parseHash, toHash } from './router.ts'
-import {
-  addDays, daysUntil, getBatches, isCardNumber, isEmail, isExpiry, isPhone, isUpiId, priceBreakdown,
-} from './lib.ts'
+import { addDays, daysUntil, isEmail, isPhone, priceBreakdown } from './lib.ts'
 
 test('hash routes round-trip and unknown paths fall back to landing', () => {
   assert.deepEqual(parseHash(toHash('trek-details', { trek: '3' })), { screen: 'trek-details', query: { trek: '3' } })
@@ -20,14 +18,6 @@ test('price breakdown adds a rounded 5% service fee', () => {
   assert.deepEqual(priceBreakdown(3333, 1), { subtotal: 3333, serviceFee: 167, total: 3500 })
 })
 
-test('batches are in the future, three weeks apart, and stable per trek', () => {
-  const batches = getBatches('1', '2026-10-09')
-  assert.equal(batches.length, 5)
-  assert.equal(batches[0].date, '2026-10-23')
-  assert.equal(batches[1].date, '2026-11-13')
-  assert.deepEqual(getBatches('1', '2026-10-09'), batches)
-  assert.ok(batches.every(b => b.spots >= 1 && b.spots <= 12))
-})
 
 test('date helpers cross month and year boundaries', () => {
   assert.equal(addDays('2026-12-25', 10), '2027-01-04')
@@ -42,12 +32,4 @@ test('form validators accept good input and reject bad input', () => {
   assert.ok(isPhone('9876543210'))
   assert.ok(!isPhone('12345'))
   assert.ok(!isPhone('5876543210'))
-  assert.ok(isCardNumber('4242 4242 4242 4242'))
-  assert.ok(!isCardNumber('4242 4242'))
-  const now = new Date(2026, 9, 9)
-  assert.ok(isExpiry('10/26', now))
-  assert.ok(!isExpiry('09/26', now))
-  assert.ok(!isExpiry('13/30', now))
-  assert.ok(isUpiId('rahul@okhdfc'))
-  assert.ok(!isUpiId('rahul'))
 })
