@@ -154,7 +154,7 @@ bookings.post('/', requireRole('user'), async (req, res) => {
   }
   // The amount is recomputed here so a client cannot book at a price it made up.
   const booking = await Booking.create({
-    traveller: req.body.traveller,
+    ...pick(req.body, ['traveller', 'phone', 'emergencyContact', 'medicalInfo']),
     date,
     trekId,
     email: req.user.email,

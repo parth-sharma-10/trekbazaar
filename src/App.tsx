@@ -10,7 +10,7 @@ import SignUp from './screens/SignUp'
 import Explore from './screens/Explore'
 import TrekDetails from './screens/TrekDetails'
 import BookingFlow from './screens/BookingFlow'
-import PaymentSuccess from './screens/PaymentSuccess'
+import BookingRequested from './screens/BookingRequested'
 import UserDashboard from './screens/UserDashboard'
 import BookingHistory from './screens/BookingHistory'
 import Wishlist from './screens/Wishlist'
@@ -39,7 +39,7 @@ const roleForScreen: Partial<Record<Screen, UserRole>> = {
   'operator-verification': 'admin',
   'reviews-management': 'admin',
 }
-const loginOnly: Screen[] = ['booking', 'payment-success', 'settings']
+const loginOnly: Screen[] = ['booking', 'booking-requested', 'settings']
 
 const homeFor = { user: 'user-dashboard', operator: 'operator-dashboard', admin: 'admin-dashboard' } as const
 
@@ -50,7 +50,7 @@ const titles: Record<Screen, string> = {
   explore: 'Explore Treks',
   'trek-details': 'Trek Details',
   booking: 'Book Your Trek',
-  'payment-success': 'Booking Confirmed',
+  'booking-requested': 'Booking Requested',
   'user-dashboard': 'Dashboard',
   'booking-history': 'My Bookings',
   wishlist: 'Wishlist',
@@ -125,7 +125,7 @@ export default function App() {
       case 'explore': return <Explore {...commonProps} query={query} />
       case 'trek-details': return <TrekDetails {...commonProps} trekId={query.trek} />
       case 'booking': return <BookingFlow {...commonProps} trekId={query.trek} initialDate={query.date} initialParticipants={Number(query.pax) || 1} />
-      case 'payment-success': return <PaymentSuccess {...commonProps} bookingId={query.booking} />
+      case 'booking-requested': return <BookingRequested {...commonProps} bookingId={query.booking} />
       case 'user-dashboard': return <UserDashboard {...commonProps} />
       case 'booking-history': return <BookingHistory {...commonProps} />
       case 'wishlist': return <Wishlist {...commonProps} />

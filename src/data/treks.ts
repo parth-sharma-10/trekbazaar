@@ -304,10 +304,10 @@ export const treks: Omit<Trek, 'rating' | 'reviewCount' | 'departures'>[] = [
 ]
 
 export const destinations = [
-  { name: 'Uttarakhand', image: 'https://images.unsplash.com/photo-1625735263130-6ff46f244010?w=400&h=300&fit=crop&auto=format', count: 45 },
-  { name: 'Himachal Pradesh', image: 'https://images.unsplash.com/photo-1625735261862-1463c3d43b1c?w=400&h=300&fit=crop&auto=format', count: 38 },
-  { name: 'Ladakh', image: 'https://images.unsplash.com/photo-1718429205172-0d91b73ab23c?w=400&h=300&fit=crop&auto=format', count: 22 },
-  { name: 'West Bengal', image: 'https://images.unsplash.com/photo-1666438238957-76f3afac8eae?w=400&h=300&fit=crop&auto=format', count: 14 },
-  { name: 'Nagaland', image: 'https://images.unsplash.com/photo-1704610077766-7a5e0535638c?w=400&h=300&fit=crop&auto=format', count: 9 },
-  { name: 'Sikkim', image: 'https://images.unsplash.com/photo-1665849865197-6b4f0d1206e1?w=400&h=300&fit=crop&auto=format', count: 17 },
+  { name: 'Uttarakhand', image: 'https://images.unsplash.com/photo-1625735263130-6ff46f244010?w=400&h=300&fit=crop&auto=format' },
+  { name: 'Himachal Pradesh', image: 'https://images.unsplash.com/photo-1625735261862-1463c3d43b1c?w=400&h=300&fit=crop&auto=format' },
+  { name: 'Ladakh', image: 'https://images.unsplash.com/photo-1718429205172-0d91b73ab23c?w=400&h=300&fit=crop&auto=format' },
+  { name: 'West Bengal', image: 'https://images.unsplash.com/photo-1666438238957-76f3afac8eae?w=400&h=300&fit=crop&auto=format' },
+  { name: 'Nagaland', image: 'https://images.unsplash.com/photo-1704610077766-7a5e0535638c?w=400&h=300&fit=crop&auto=format' },
+  { name: 'Sikkim', image: 'https://images.unsplash.com/photo-1665849865197-6b4f0d1206e1?w=400&h=300&fit=crop&auto=format' },
 ]

@@ -55,6 +55,10 @@ const bookingSchema = new mongoose.Schema(
     amount: { type: Number, required: true, min: 0 },
     status: { type: String, enum: ['Confirmed', 'Pending', 'Completed', 'Cancelled'], default: 'Pending' },
     traveller: { type: String, required: true, trim: true },
+    // Contact and safety details for the operator; only the trekker, that operator and admins can read a booking.
+    phone: { type: String, trim: true, default: '', maxlength: 20 },
+    emergencyContact: { type: String, trim: true, default: '', maxlength: 120 },
+    medicalInfo: { type: String, trim: true, default: '', maxlength: 500 },
     email: { type: String, lowercase: true, trim: true, match: [/^\S+@\S+\.\S+$/, 'Invalid email'] },
   },
   { timestamps: true, toJSON },

@@ -11,6 +11,22 @@ export interface User {
   phone: string
   city: string
   bio: string
+  verified?: boolean
+  suspended?: boolean
+  createdAt?: string
+}
+
+export type ReviewStatus = 'Pending' | 'Approved' | 'Rejected'
+
+export interface Review {
+  id: string
+  trekId: string
+  userId: string
+  userName: string
+  rating: number
+  comment: string
+  status: ReviewStatus
+  createdAt: string
 }
 
 export type BookingStatus = 'Confirmed' | 'Pending' | 'Completed' | 'Cancelled'
@@ -23,7 +39,11 @@ export interface Booking {
   amount: number
   status: BookingStatus
   traveller: string
+  phone?: string
+  emergencyContact?: string
+  medicalInfo?: string
   email?: string
+  createdAt?: string
 }
 
 export type NewBooking = Omit<Booking, 'id' | 'amount' | 'status' | 'email'>

@@ -15,7 +15,7 @@ export default function SignUp({ navigate, initialRole }: SignUpProps) {
     e.preventDefault()
     const user = await register({ ...form, name: form.name.trim(), email: form.email.trim(), phone: form.phone ? `+91 ${form.phone.trim()}` : '' })
     if (!user) return
-    notify(form.role === 'operator' ? 'Operator account created. Verification usually takes 2–3 business days.' : `Welcome to TrekBazaar, ${form.name.trim().split(' ')[0]}!`)
+    notify(form.role === 'operator' ? 'Operator account created. An admin must verify it before you can publish treks.' : `Welcome to TrekBazaar, ${form.name.trim().split(' ')[0]}!`)
     navigate(form.role === 'operator' ? 'operator-dashboard' : 'user-dashboard')
   }
 
@@ -38,7 +38,7 @@ export default function SignUp({ navigate, initialRole }: SignUpProps) {
             <span className="font-bold text-xl">TrekBazaar</span>
           </div>
           <h2 className="font-display text-3xl mb-3">Start your<br />Himalayan journey.</h2>
-          <p className="text-white/70 text-sm leading-relaxed">Create a free account and get access to 1,200+ curated treks with verified operators.</p>
+          <p className="text-white/70 text-sm leading-relaxed">Create a free account to request seats on treks and review the ones you complete.</p>
         </div>
       </div>
 
@@ -144,19 +144,10 @@ export default function SignUp({ navigate, initialRole }: SignUpProps) {
             {form.role === 'operator' && (
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
                 <p className="text-xs text-blue-700 font-medium mb-1">Operator Account</p>
-                <p className="text-xs text-blue-600">You'll need to submit your operator details and certifications after signing up. Our team will verify your profile within 2-3 business days.</p>
+                <p className="text-xs text-blue-600">You can sign in straight away, but you can publish treks only after a TrekBazaar admin verifies your account.</p>
               </div>
             )}
 
-            <div className="flex items-start gap-2 pt-1">
-              <input type="checkbox" required id="terms" className="mt-0.5 accent-forest" />
-              <label htmlFor="terms" className="text-xs text-slate-500 leading-relaxed">
-                I agree to TrekBazaar's{' '}
-                <span className="text-forest underline">Terms of Service</span>
-                {' '}and{' '}
-                <span className="text-forest underline">Privacy Policy</span>
-              </label>
-            </div>
 
             <button type="submit" className="w-full bg-forest hover:bg-forest-dark text-white font-semibold py-3.5 rounded-xl transition-colors mt-2">
               {form.role === 'operator' ? 'Create Operator Account' : 'Create Free Account'}

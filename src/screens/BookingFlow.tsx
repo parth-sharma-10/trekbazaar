@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import Navbar from '../components/Navbar'
 import { useStore } from '../store'
-import {
-  formatDate, formatINR, getBatches, isCardNumber, isEmail, isExpiry, isPhone, isUpiId,
-  MAX_PARTICIPANTS, priceBreakdown,
-} from '../lib'
+import { formatDate, formatINR, isPhone, MAX_PARTICIPANTS, priceBreakdown } from '../lib'
 import type { NavigateFn, UserRole } from '../types'
 
 interface BookingFlowProps {
@@ -27,26 +24,19 @@ function FieldError({ message }: { message?: string }) {
 export default function BookingFlow({ navigate, trekId, initialDate, initialParticipants, userRole }: BookingFlowProps) {
   const { findTrek, user, addBooking } = useStore()
   const trek = findTrek(trekId)
-  const batches = getBatches(trekId ?? '')
+  const departures = (trek?.departures ?? []).filter(d => d.seatsLeft > 0)
   const [step, setStep] = useState(1)
   const [errors, setErrors] = useState<Errors>({})
   const [processing, setProcessing] = useState(false)
   const [firstName, ...rest] = (user?.name ?? '').split(' ')
   const [form, setForm] = useState({
-    date: batches.some(b => b.date === initialDate) ? initialDate! : '',
+    date: departures.some(d => d.date === initialDate) ? initialDate! : '',
     participants: Math.min(MAX_PARTICIPANTS, Math.max(1, initialParticipants)),
     firstName,
     lastName: rest.join(' '),
-    email: user?.email ?? '',
     phone: user?.phone ?? '',
     emergencyContact: '',
     medicalInfo: '',
-    paymentMethod: 'card',
-    cardNumber: '',
-    expiry: '',
-    cvv: '',
-    upiId: '',
-    bank: 'HDFC Bank',
   })
 
   if (!trek) {
@@ -63,8 +53,8 @@ export default function BookingFlow({ navigate, trekId, initialDate, initialPart
   }
 
   const { subtotal, serviceFee, total } = priceBreakdown(trek.price, form.participants)
-  const selectedBatch = batches.find(b => b.date === form.date)
-  const maxParticipants = Math.min(MAX_PARTICIPANTS, selectedBatch?.spots ?? MAX_PARTICIPANTS)
+  const selected = departures.find(d => d.date === form.date)
+  const maxParticipants = Math.min(MAX_PARTICIPANTS, selected?.seatsLeft ?? MAX_PARTICIPANTS)
   const update = (patch: Partial<typeof form>) => {
     setForm(f => ({ ...f, ...patch }))
     setErrors(e => {
@@ -78,20 +68,8 @@ export default function BookingFlow({ navigate, trekId, initialDate, initialPart
     const e: Errors = {}
     if (!form.firstName.trim()) e.firstName = 'Enter your first name'
     if (!form.lastName.trim()) e.lastName = 'Enter your last name'
-    if (!isEmail(form.email)) e.email = 'Enter a valid email address'
     if (!isPhone(form.phone)) e.phone = 'Enter a 10-digit Indian mobile number'
     if (form.emergencyContact.trim().length < 5) e.emergencyContact = 'Add an emergency contact name and phone'
-    return e
-  }
-
-  const validatePayment = (): Errors => {
-    const e: Errors = {}
-    if (form.paymentMethod === 'card') {
-      if (!isCardNumber(form.cardNumber)) e.cardNumber = 'Card number must be 16 digits'
-      if (!isExpiry(form.expiry)) e.expiry = 'Use MM/YY and a future date'
-      if (!/^\d{3,4}$/.test(form.cvv)) e.cvv = '3 or 4 digits'
-    }
-    if (form.paymentMethod === 'upi' && !isUpiId(form.upiId)) e.upiId = 'Enter a UPI ID like name@bank'
     return e
   }
 
@@ -109,23 +87,23 @@ export default function BookingFlow({ navigate, trekId, initialDate, initialPart
     }
   }
 
-  const pay = async () => {
-    const found = validatePayment()
-    setErrors(found)
-    if (Object.keys(found).length > 0) return focusFirstError()
+  // No payment is taken online: the request is stored as Pending and the operator confirms it.
+  const submit = async () => {
     setProcessing(true)
-    // ponytail: no payment gateway; the server stores the booking as Confirmed and computes the amount.
     const booking = await addBooking({
       trekId: trek.id,
       date: form.date,
       participants: form.participants,
       traveller: `${form.firstName.trim()} ${form.lastName.trim()}`,
+      phone: form.phone.trim(),
+      emergencyContact: form.emergencyContact.trim(),
+      medicalInfo: form.medicalInfo.trim(),
     })
     setProcessing(false)
-    if (booking) navigate('payment-success', { booking: booking.id })
+    if (booking) navigate('booking-requested', { booking: booking.id })
   }
 
-  const steps = ['Select Dates', 'Participants', 'Payment']
+  const steps = ['Select Dates', 'Participants', 'Review']
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -167,13 +145,18 @@ export default function BookingFlow({ navigate, trekId, initialDate, initialPart
                 <h2 className="font-display text-2xl text-slate-900 mb-1">Select Your Batch</h2>
                 <p className="text-slate-500 text-sm mb-6">Choose a departure date for your trek</p>
 
+                {departures.length === 0 && (
+                  <p className="text-sm text-slate-500 bg-slate-50 rounded-xl px-4 py-3 mb-6">
+                    {trek.operator} has no departures with free seats right now. Check back later.
+                  </p>
+                )}
                 <div className="space-y-3 mb-6" role="radiogroup" aria-label="Departure dates">
-                  {batches.map(b => (
+                  {departures.map(b => (
                     <button
                       key={b.date}
                       role="radio"
                       aria-checked={form.date === b.date}
-                      onClick={() => update({ date: b.date, participants: Math.min(form.participants, b.spots) })}
+                      onClick={() => update({ date: b.date, participants: Math.min(form.participants, b.seatsLeft) })}
                       className={`w-full flex items-center justify-between gap-3 px-4 sm:px-5 py-4 rounded-xl border-2 transition-all ${form.date === b.date ? 'border-forest bg-forest-50' : 'border-slate-200 hover:border-slate-300'}`}
                     >
                       <div className="text-left">
@@ -181,8 +164,8 @@ export default function BookingFlow({ navigate, trekId, initialDate, initialPart
                         <div className="text-xs text-slate-400 mt-0.5">{trek.duration} · Starts at {trek.meetingPoint}</div>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
-                        <span className={`text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap ${b.spots <= 3 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                          {b.spots} spot{b.spots === 1 ? '' : 's'} left
+                        <span className={`text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap ${b.seatsLeft <= 3 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                          {b.seatsLeft} seat{b.seatsLeft === 1 ? '' : 's'} left
                         </span>
                         {form.date === b.date && (
                           <div className="w-5 h-5 bg-forest rounded-full flex items-center justify-center">
@@ -202,8 +185,8 @@ export default function BookingFlow({ navigate, trekId, initialDate, initialPart
                     <button onClick={() => update({ participants: Math.min(maxParticipants, form.participants + 1) })} disabled={form.participants >= maxParticipants} aria-label="More participants" className="w-10 h-10 rounded-full border-2 border-slate-200 flex items-center justify-center text-slate-500 hover:border-forest hover:text-forest transition-colors text-xl disabled:opacity-40">+</button>
                     <span className="text-sm text-slate-400">{form.participants > 1 ? 'people' : 'person'}</span>
                   </div>
-                  {selectedBatch && form.participants >= maxParticipants && (
-                    <p className="text-xs text-amber-700 mt-2">Only {selectedBatch.spots} spot{selectedBatch.spots === 1 ? '' : 's'} left on this departure.</p>
+                  {selected && form.participants >= maxParticipants && (
+                    <p className="text-xs text-amber-700 mt-2">Only {selected.seatsLeft} seat{selected.seatsLeft === 1 ? '' : 's'} left on this departure.</p>
                   )}
                 </div>
 
@@ -237,9 +220,8 @@ export default function BookingFlow({ navigate, trekId, initialDate, initialPart
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
-                    <input id="email" type="email" autoComplete="email" value={form.email} onChange={e => update({ email: e.target.value })} placeholder="rahul@example.com" aria-invalid={!!errors.email} className={inputClass(!!errors.email)} />
-                    <FieldError message={errors.email} />
+                    <span className="block text-sm font-medium text-slate-700 mb-1.5">Email</span>
+                    <p className="px-4 py-3 text-sm text-slate-500 bg-slate-50 rounded-xl truncate">{user?.email}</p>
                   </div>
                   <div>
                     <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-1.5">Phone</label>
@@ -264,108 +246,42 @@ export default function BookingFlow({ navigate, trekId, initialDate, initialPart
                     Back
                   </button>
                   <button type="submit" className="flex-1 bg-forest hover:bg-forest-dark text-white font-semibold py-3.5 rounded-xl transition-colors">
-                    Continue to Payment
+                    Review Request
                   </button>
                 </div>
               </form>
             )}
 
             {step === 3 && (
-              <form onSubmit={e => { e.preventDefault(); pay() }} noValidate>
-                <h2 className="font-display text-2xl text-slate-900 mb-1">Secure Payment</h2>
-                <p className="text-slate-500 text-sm mb-6">Demo checkout. No real payment is taken.</p>
+              <div>
+                <h2 className="font-display text-2xl text-slate-900 mb-1">Review Your Request</h2>
+                <p className="text-slate-500 text-sm mb-6">
+                  No payment is taken online. {trek.operator} reviews the request, confirms your seats and arranges payment with you directly.
+                </p>
 
-                <div className="flex gap-2 sm:gap-3 mb-5" role="radiogroup" aria-label="Payment method">
-                  {['card', 'upi', 'netbanking'].map(method => (
-                    <button
-                      type="button"
-                      key={method}
-                      role="radio"
-                      aria-checked={form.paymentMethod === method}
-                      onClick={() => update({ paymentMethod: method })}
-                      className={`flex-1 py-3 rounded-xl border-2 text-sm font-medium capitalize transition-all ${form.paymentMethod === method ? 'border-forest bg-forest-50 text-forest' : 'border-slate-200 text-slate-500 hover:border-slate-300'}`}
-                    >
-                      {method === 'upi' ? 'UPI' : method === 'netbanking' ? 'Net Banking' : 'Card'}
-                    </button>
+                <dl className="divide-y divide-slate-100 border border-slate-100 rounded-xl mb-6 text-sm">
+                  {[
+                    ['Departure', formatDate(form.date)],
+                    ['Participants', `${form.participants} ${form.participants > 1 ? 'people' : 'person'}`],
+                    ['Lead traveller', `${form.firstName.trim()} ${form.lastName.trim()}`],
+                    ['Phone', form.phone],
+                    ['Emergency contact', form.emergencyContact],
+                    ['Medical notes', form.medicalInfo.trim() || 'None'],
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex justify-between gap-4 px-4 py-3">
+                      <dt className="text-slate-500">{label}</dt>
+                      <dd className="text-slate-900 font-medium text-right break-words min-w-0">{value}</dd>
+                    </div>
                   ))}
-                </div>
-
-                {form.paymentMethod === 'card' && (
-                  <div className="space-y-4 mb-6">
-                    <div>
-                      <label htmlFor="card" className="block text-sm font-medium text-slate-700 mb-1.5">Card Number</label>
-                      <input
-                        id="card"
-                        inputMode="numeric"
-                        autoComplete="cc-number"
-                        value={form.cardNumber}
-                        onChange={e => update({ cardNumber: e.target.value.replace(/\D/g, '').slice(0, 16).replace(/(\d{4})(?=\d)/g, '$1 ') })}
-                        placeholder="4242 4242 4242 4242"
-                        aria-invalid={!!errors.cardNumber}
-                        className={`${inputClass(!!errors.cardNumber)} font-mono`}
-                      />
-                      <FieldError message={errors.cardNumber} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="expiry" className="block text-sm font-medium text-slate-700 mb-1.5">Expiry</label>
-                        <input
-                          id="expiry"
-                          inputMode="numeric"
-                          autoComplete="cc-exp"
-                          value={form.expiry}
-                          onChange={e => {
-                            const digits = e.target.value.replace(/\D/g, '').slice(0, 4)
-                            update({ expiry: digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits })
-                          }}
-                          placeholder="MM/YY"
-                          aria-invalid={!!errors.expiry}
-                          className={`${inputClass(!!errors.expiry)} font-mono`}
-                        />
-                        <FieldError message={errors.expiry} />
-                      </div>
-                      <div>
-                        <label htmlFor="cvv" className="block text-sm font-medium text-slate-700 mb-1.5">CVV</label>
-                        <input id="cvv" type="password" inputMode="numeric" autoComplete="cc-csc" maxLength={4} value={form.cvv} onChange={e => update({ cvv: e.target.value.replace(/\D/g, '') })} placeholder="•••" aria-invalid={!!errors.cvv} className={`${inputClass(!!errors.cvv)} font-mono`} />
-                        <FieldError message={errors.cvv} />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {form.paymentMethod === 'upi' && (
-                  <div className="mb-6">
-                    <label htmlFor="upi" className="block text-sm font-medium text-slate-700 mb-1.5">UPI ID</label>
-                    <input id="upi" value={form.upiId} onChange={e => update({ upiId: e.target.value })} placeholder="rahul@okhdfc" aria-invalid={!!errors.upiId} className={inputClass(!!errors.upiId)} />
-                    <FieldError message={errors.upiId} />
-                  </div>
-                )}
-
-                {form.paymentMethod === 'netbanking' && (
-                  <div className="mb-6">
-                    <label htmlFor="bank" className="block text-sm font-medium text-slate-700 mb-1.5">Select Bank</label>
-                    <select id="bank" value={form.bank} onChange={e => update({ bank: e.target.value })} className={`${inputClass(false)} text-slate-600 bg-white`}>
-                      <option>HDFC Bank</option>
-                      <option>ICICI Bank</option>
-                      <option>SBI</option>
-                      <option>Axis Bank</option>
-                      <option>Kotak Bank</option>
-                    </select>
-                  </div>
-                )}
-
-                <div className="bg-slate-50 rounded-xl p-4 mb-5 text-xs text-slate-500 flex items-start gap-2">
-                  <svg className="w-4 h-4 text-forest shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                  By completing this booking, you agree to our Terms of Service and cancellation policy. Free cancellation up to 30 days before departure.
-                </div>
+                </dl>
 
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setStep(2)} disabled={processing} className="border-2 border-slate-200 text-slate-700 font-semibold py-3.5 px-6 rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-40">Back</button>
-                  <button type="submit" disabled={processing} className="flex-1 bg-forest hover:bg-forest-dark text-white font-semibold py-3.5 rounded-xl transition-colors disabled:opacity-70 disabled:cursor-wait">
-                    {processing ? 'Processing payment…' : `Pay ${formatINR(total)}`}
+                  <button onClick={submit} disabled={processing} className="flex-1 bg-forest hover:bg-forest-dark text-white font-semibold py-3.5 rounded-xl transition-colors disabled:opacity-70 disabled:cursor-wait">
+                    {processing ? 'Sending request…' : 'Send Booking Request'}
                   </button>
                 </div>
-              </form>
+              </div>
             )}
           </div>
 
@@ -406,10 +322,7 @@ export default function BookingFlow({ navigate, trekId, initialDate, initialPart
                 </div>
               </div>
 
-              <div className="mt-4 bg-green-50 rounded-xl p-3 flex items-center gap-2 text-xs text-green-700">
-                <svg className="w-4 h-4 text-green-500 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                Free cancellation until 30 days before departure
-              </div>
+              <p className="mt-4 text-xs text-slate-500">Payable to the operator after they confirm. You can cancel from My Bookings until the trek starts.</p>
             </div>
           </div>
         </div>
