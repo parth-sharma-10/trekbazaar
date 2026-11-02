@@ -121,6 +121,7 @@ Send `Authorization: Bearer <token>` with the token returned by register or logi
 | POST | `/api/users/login` | Anyone; 5 failed attempts per email lock it for 15 minutes |
 | GET | `/api/users` | Admin |
 | PUT | `/api/users/:id` | Yourself, or an admin; only an admin changes a role, and never their own |
+| DELETE | `/api/users/:id` | Admin, never their own account |
 | POST | `/api/users/me/password` | Signed in; needs `currentPassword`, wrong guesses count toward the login lockout |
 
 Request bodies are copied field by field, so a client cannot set ids, owners, ratings or Mongo operators such as `$unset`.
