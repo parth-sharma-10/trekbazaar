@@ -24,20 +24,20 @@ import UserManagement from './screens/UserManagement'
 import OperatorVerification from './screens/OperatorVerification'
 import ReviewsManagement from './screens/ReviewsManagement'
 
-// Screens that need a signed-in account of one role. The API enforces the same rules;
+// Screens that need a signed-in account of one of these roles. The API enforces the same rules;
 // this only keeps people off screens whose requests would be refused.
-const roleForScreen: Partial<Record<Screen, UserRole>> = {
-  'user-dashboard': 'user',
-  'booking-history': 'user',
-  wishlist: 'user',
-  'operator-dashboard': 'operator',
-  'add-trek': 'operator',
-  'booking-management': 'operator',
-  'revenue-analytics': 'operator',
-  'admin-dashboard': 'admin',
-  'user-management': 'admin',
-  'operator-verification': 'admin',
-  'reviews-management': 'admin',
+const roleForScreen: Partial<Record<Screen, UserRole[]>> = {
+  'user-dashboard': ['user'],
+  'booking-history': ['user'],
+  wishlist: ['user'],
+  'operator-dashboard': ['operator'],
+  'add-trek': ['operator', 'admin'],
+  'booking-management': ['operator', 'admin'],
+  'revenue-analytics': ['operator'],
+  'admin-dashboard': ['admin'],
+  'user-management': ['admin'],
+  'operator-verification': ['admin'],
+  'reviews-management': ['admin'],
 }
 const loginOnly: Screen[] = ['booking', 'booking-requested', 'settings']
 
@@ -79,7 +79,7 @@ export default function App() {
   const required = roleForScreen[screen]
   const redirect: Screen | null =
     (required || loginOnly.includes(screen)) && !user ? 'login'
-    : required && required !== role ? homeFor[role]
+    : required && !required.includes(role) ? homeFor[role]
     : null
 
   useEffect(() => {

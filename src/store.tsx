@@ -59,15 +59,6 @@ interface Prefs {
 
 const STORAGE_KEY = 'trekbazaar:v3'
 
-// The seeded trekker account the social-login buttons sign in to (password trek1234).
-export const DEMO_USER: User = {
-  name: 'Rahul Kumar',
-  email: 'rahul.kumar@example.com',
-  phone: '+91 98765 43210',
-  city: 'Delhi',
-  bio: 'Passionate trekker exploring the Himalayas one trail at a time.',
-}
-export const DEMO_PASSWORD = 'trek1234'
 
 function initialPrefs(): Prefs {
   const prefersDark = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false
@@ -110,7 +101,7 @@ interface Store extends Prefs {
   setBookingStatus: (id: string, status: BookingStatus) => Promise<Booking | undefined>
   saveTrek: (trek: Trek, isNew: boolean) => Promise<Trek | undefined>
   deleteTrek: (id: string) => Promise<boolean>
-  resetDemo: () => void
+  resetBrowserData: () => void
   toggleDarkMode: () => void
   setDarkMode: (enabled: boolean) => void
   toast: string | null
@@ -221,8 +212,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         signIn((await api.post<Session>('/users/register', profile)).data)),
       logout: () => setPrefs(p => ({ ...p, user: null, token: null })),
       updateUser: patch => attempt(async () => {
-        const merged = { ...(prefs.user ?? DEMO_USER), ...patch }
-        const saved = merged.id ? (await api.put<User>(`/users/${merged.id}`, merged)).data : merged
+        if (!prefs.user?.id) throw new Error('Log in to edit your profile')
+        const saved = (await api.put<User>(`/users/${prefs.user.id}`, { ...prefs.user, ...patch })).data
         setPrefs(p => ({ ...p, user: saved }))
         return saved
       }),
@@ -250,7 +241,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setPrefs(p => ({ ...p, wishlist: p.wishlist.filter(x => x !== id) }))
         return true
       })),
-      resetDemo: () => {
+      resetBrowserData: () => {
         setPrefs(initialPrefs())
         reload()
       },
@@ -270,6 +261,9 @@ export function useStore(): Store {
   return store
 }
 
+// For screens App only renders for a signed-in account.
 export function useCurrentUser(): User {
-  return useStore().user ?? DEMO_USER
+  const { user } = useStore()
+  if (!user) throw new Error('useCurrentUser needs a signed-in account; App should have redirected to login')
+  return user
 }

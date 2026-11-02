@@ -130,10 +130,10 @@ export default function Navbar({ navigate, currentScreen, userRole }: NavbarProp
                 {profileOpen && <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />}
                 {profileOpen && (
                   <div className="absolute right-0 top-12 w-52 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-50">
-                    <div className="px-4 py-2 text-xs text-slate-400 truncate">{user ? user.email : 'Demo session'}</div>
+                    <div className="px-4 py-2 text-xs text-slate-400 truncate">{user?.email}</div>
                     <button onClick={() => { navigate(userRole === 'operator' ? 'operator-dashboard' : userRole === 'admin' ? 'admin-dashboard' : 'user-dashboard'); setProfileOpen(false) }} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">Dashboard</button>
                     <button onClick={() => { navigate('settings'); setProfileOpen(false) }} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">Profile & Settings</button>
-                    <button onClick={() => { navigate('wishlist'); setProfileOpen(false) }} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">Wishlist</button>
+                    {userRole === 'user' && <button onClick={() => { navigate('wishlist'); setProfileOpen(false) }} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">Wishlist</button>}
                     <div className="border-t border-slate-100 my-1" />
                     <button onClick={() => { logout(); navigate('landing'); setProfileOpen(false) }} className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors">Log out</button>
                   </div>

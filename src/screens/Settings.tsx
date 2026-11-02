@@ -11,7 +11,7 @@ interface SettingsProps {
 
 export default function Settings({ navigate, userRole }: SettingsProps) {
   const [activeTab, setActiveTab] = useState('profile')
-  const { updateUser, changePassword, notify, resetDemo, darkMode, toggleDarkMode } = useStore()
+  const { updateUser, changePassword, notify, resetBrowserData, darkMode, toggleDarkMode } = useStore()
   const user = useCurrentUser()
   const [profile, setProfile] = useState(user)
   const [passwords, setPasswords] = useState({ current: '', next: '', confirm: '' })
@@ -163,7 +163,7 @@ export default function Settings({ navigate, userRole }: SettingsProps) {
                   <p className="text-xs text-slate-400 mb-3">Your account, treks and bookings are stored on the server. This clears the wishlist and theme saved in this browser, and logs you out.</p>
                   {confirmReset ? (
                     <div className="flex gap-2">
-                      <button onClick={() => { resetDemo(); setConfirmReset(false); navigate('landing') }} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">Yes, reset</button>
+                      <button onClick={() => { resetBrowserData(); setConfirmReset(false); navigate('landing') }} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">Yes, reset</button>
                       <button onClick={() => setConfirmReset(false)} className="border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">Keep my data</button>
                     </div>
                   ) : (
