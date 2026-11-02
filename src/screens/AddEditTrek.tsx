@@ -11,7 +11,7 @@ interface AddEditTrekProps {
   editTrekId?: string | null
 }
 
-const STATES = ['Uttarakhand', 'Himachal Pradesh', 'Ladakh', 'West Bengal', 'Nagaland', 'Sikkim', 'Manipur', 'Arunachal Pradesh']
+const STATES = ['Uttarakhand', 'Himachal Pradesh', 'Ladakh', 'Jammu and Kashmir', 'West Bengal', 'Nagaland', 'Sikkim', 'Manipur', 'Arunachal Pradesh']
 const DIFFICULTIES = ['Easy', 'Moderate', 'Difficult', 'Expert'] as const
 const DESCRIPTION_LIMIT = 500
 

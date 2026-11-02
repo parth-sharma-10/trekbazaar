@@ -8,7 +8,7 @@ import { DEMO_PASSWORD, seed } from './seed.js'
 let server
 let base
 const tokens = {}
-let departure // first scheduled departure of the seeded treks
+const firstDeparture = {} // trekId -> its first scheduled departure; each trek has its own season
 
 before(async () => {
   server = await start(process.env.TEST_MONGO_URI || 'mongodb://127.0.0.1:27017/trekbazaar_test', 0)
@@ -20,7 +20,7 @@ before(async () => {
   tokens.admin = await loginAs('admin@trekbazaar.in')
   const other = await call('POST', '/users/register', { name: 'Other Op', email: 'other.op@example.com', password: 'longenough', role: 'operator' })
   tokens.otherOperator = other.body.token
-  departure = (await call('GET', '/treks/1')).body.departures[0].date
+  for (const t of (await call('GET', '/treks')).body) firstDeparture[t.id] = t.departures[0]?.date
 })
 
 after(async () => {
@@ -56,7 +56,9 @@ const newTrek = {
   description: 'A short test trek used only by the integration tests.',
 }
 
-const booking = (trekId = '1') => ({ trekId, date: departure, participants: 2, traveller: 'A B' })
+const booking = (trekId = '1') => ({ trekId, date: firstDeparture[trekId], participants: 2, traveller: 'A B' })
+// Treks the seed assigns to op1 (Himalayan Treks Co.), the operator the tests log in as.
+const OP1_TREKS = ['1', '4', '12', '14', '15']
 
 test('treks: operator creates, reads, updates and deletes their own trek', async () => {
   const created = await call('POST', '/treks', { ...newTrek, operatorId: 'someone-else', rating: 5 }, tokens.operator)
@@ -160,7 +162,7 @@ test('bookings: each role sees only its own scope', async () => {
 
   const seenByOperator = (await call('GET', '/bookings', undefined, tokens.operator)).body
   assert.ok(seenByOperator.some(b => b.id === mine.body.id), 'trek 4 belongs to op1')
-  assert.ok(seenByOperator.every(b => ['1', '4'].includes(b.trekId)), 'op1 sees only bookings on its treks')
+  assert.ok(seenByOperator.every(b => OP1_TREKS.includes(b.trekId)), 'op1 sees only bookings on its treks')
   assert.equal((await call('GET', '/bookings', undefined, tokens.otherOperator)).body.length, 0)
 
   assert.ok((await call('GET', '/bookings', undefined, tokens.admin)).body.length >= seenByOperator.length)
@@ -274,10 +276,19 @@ test('users: suspended accounts cannot log in or use old tokens', async () => {
 })
 
 test('reviews: only after a completed trek, moderated, and they drive the rating', async () => {
-  const review = { trekId: '5', rating: 4, comment: 'Clear skies on the summit day, well run.' }
+  // Rahul's seeded trips: treks 5 and 8 completed and already reviewed, trek 1 confirmed.
+  const review = { trekId: '15', rating: 4, comment: 'Clear skies on the summit day, well run.' }
   assert.equal((await call('POST', '/reviews', review)).status, 401)
   assert.equal((await call('POST', '/reviews', review, tokens.operator)).status, 403)
   assert.equal((await call('POST', '/reviews', { ...review, trekId: '1' }, tokens.user)).status, 403, 'trek 1 not completed')
+  assert.equal((await call('POST', '/reviews', review, tokens.user)).status, 403, 'trek 15 not booked yet')
+  assert.equal((await call('POST', '/reviews', { ...review, trekId: '5' }, tokens.user)).status, 409, 'one review per trek')
+
+  const trip = (await call('POST', '/bookings', booking('15'), tokens.user)).body
+  assert.equal((await call('POST', '/reviews', review, tokens.user)).status, 403, 'a pending booking is not a completed trek')
+  assert.equal((await call('PATCH', `/bookings/${trip.id}`, { status: 'Confirmed' }, tokens.operator)).status, 200)
+  assert.equal((await call('PATCH', `/bookings/${trip.id}`, { status: 'Completed' }, tokens.operator)).status, 200)
+
   assert.equal((await call('POST', '/reviews', { ...review, comment: 'short' }, tokens.user)).status, 400)
   assert.equal((await call('POST', '/reviews', { ...review, rating: 6 }, tokens.user)).status, 400)
 
@@ -287,19 +298,30 @@ test('reviews: only after a completed trek, moderated, and they drive the rating
   assert.equal(created.body.userName, 'Rahul Kumar')
   assert.equal((await call('POST', '/reviews', review, tokens.user)).status, 409, 'one review per trek')
 
-  assert.equal((await call('GET', '/reviews?trekId=5')).body.length, 0, 'pending reviews are not public')
-  assert.equal((await call('GET', '/reviews?mine=1', undefined, tokens.user)).body.length, 1)
+  assert.equal((await call('GET', '/reviews?trekId=15')).body.length, 0, 'pending reviews are not public')
+  const mine = (await call('GET', '/reviews?mine=1', undefined, tokens.user)).body
+  assert.deepEqual(mine.map(r => r.trekId).sort(), ['15', '5', '8'], 'two seeded reviews plus the new one')
   assert.equal((await call('PATCH', `/reviews/${created.body.id}`, { status: 'Approved' }, tokens.user)).status, 403)
   assert.equal((await call('PATCH', `/reviews/${created.body.id}`, { status: 'Approved' }, tokens.operator)).status, 403)
   assert.equal((await call('PATCH', `/reviews/${created.body.id}`, { status: 'Approved' }, tokens.admin)).status, 200)
 
-  assert.equal((await call('GET', '/reviews?trekId=5')).body.length, 1)
-  const trek = (await call('GET', '/treks/5')).body
+  assert.equal((await call('GET', '/reviews?trekId=15')).body.length, 1)
+  const trek = (await call('GET', '/treks/15')).body
   assert.equal(trek.rating, 4)
   assert.equal(trek.reviewCount, 1)
 
   await call('PATCH', `/reviews/${created.body.id}`, { status: 'Rejected' }, tokens.admin)
-  assert.equal((await call('GET', '/treks/5')).body.reviewCount, 0)
+  assert.equal((await call('GET', '/treks/15')).body.reviewCount, 0)
+})
+
+test('reviews: seeded approved reviews drive the rating, pending and rejected ones do not', async () => {
+  // Trek 5 has Rahul's approved 5-star review; trek 18 only Karan's rejected one; trek 11 a pending one.
+  const kedarkantha = (await call('GET', '/treks/5')).body
+  assert.equal(kedarkantha.rating, 5)
+  assert.equal(kedarkantha.reviewCount, 1)
+  assert.equal((await call('GET', '/treks/18')).body.reviewCount, 0)
+  assert.equal((await call('GET', '/treks/11')).body.reviewCount, 0)
+  assert.equal((await call('GET', '/reviews?trekId=18')).body.length, 0, 'rejected reviews are not public')
 })
 
 test('auth: forged, tampered and expired tokens are rejected', async () => {

@@ -27,6 +27,7 @@ const trekSchema = new mongoose.Schema(
     operator: { type: String, required: true },
     operatorId: { type: String, required: true },
     image: { type: String, required: true },
+    imageCredit: { type: String, default: '', maxlength: 200 },
     gallery: [String],
     tags: [String],
     description: { type: String, required: true, minlength: 20 },
