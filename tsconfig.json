@@ -12,6 +12,8 @@
     },
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",

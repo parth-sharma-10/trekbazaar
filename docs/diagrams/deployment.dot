@@ -1,0 +1,19 @@
+digraph G {
+  rankdir=LR; bgcolor=white; pad=0.3; nodesep=0.5; ranksep=0.7;
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, fillcolor="#eef5ef", color="#2e7d32"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  dev [label="Developer machine\nvercel deploy --prod", fillcolor="#f5f5f5", color="#999999"];
+  browser [label="Browser\ntrekbazaar-eta.vercel.app"];
+  subgraph cluster_vercel { label="Vercel (Hobby)"; fontname="Helvetica-Bold"; fontsize=11; style="rounded"; color="#999999";
+    build [label="Build\nnpm run build (tsc + Vite)"];
+    cdn [label="Edge network\nstatic files from dist/"];
+    rewrite [label="vercel.json rewrite\n/api/(.*) → /api"];
+    fn [label="Serverless function\napi/index.js → Express app\nNode.js, MONGO_URI env var"];
+    build -> cdn; build -> fn; rewrite -> fn;
+  }
+  db [label="MongoDB Atlas M0\nAWS Mumbai (ap-south-1)\ndatabase: trekbazaar", shape=cylinder, fillcolor="#e8f0fb", color="#1f5fbf"];
+  dev -> build [label="upload source"];
+  browser -> cdn [label="GET /, JS, CSS"];
+  browser -> rewrite [label="axios /api/..."];
+  fn -> db [label="mongodb+srv\n(TLS, user + password)"];
+}
