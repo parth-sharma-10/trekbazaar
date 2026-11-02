@@ -53,7 +53,7 @@ export default function OperatorDashboard({ navigate, userRole }: OperatorDashbo
         <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
           <div>
             <h1 className="font-display text-3xl text-slate-900">Operator Dashboard</h1>
-            <p className="text-slate-500 mt-1">Welcome back, {user?.name}.</p>
+            <p className="text-slate-500 mt-1">Welcome back, {user?.name}</p>
           </div>
           {user?.verified && (
             <button onClick={() => navigate('add-trek')} className="flex items-center gap-2 bg-forest hover:bg-forest-dark text-white font-semibold px-5 py-2.5 rounded-full transition-colors text-sm">

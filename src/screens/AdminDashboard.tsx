@@ -16,6 +16,7 @@ const roleBadge: Record<UserRole, string> = {
 }
 
 const thisMonth = () => new Date().toISOString().slice(0, 7)
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
 export default function AdminDashboard({ navigate, userRole }: AdminDashboardProps) {
   // An admin's bookings list from the store is every booking on the platform.
@@ -39,7 +40,7 @@ export default function AdminDashboard({ navigate, userRole }: AdminDashboardPro
   ].filter(a => !!a)
 
   const platformStats = [
-    { label: 'Accounts', value: String(users.length), note: `${users.filter(u => u.role === 'user').length} trekkers · ${operators.length} operators`, icon: '👥', color: 'bg-blue-50 text-blue-600' },
+    { label: 'Accounts', value: String(users.length), note: `${plural(users.filter(u => u.role === 'user').length, 'trekker')} · ${plural(operators.length, 'operator')}`, icon: '👥', color: 'bg-blue-50 text-blue-600' },
     { label: 'Verified Operators', value: String(operators.length - unverified), note: `${unverified} awaiting`, icon: '🏕️', color: 'bg-forest-50 text-forest' },
     { label: 'Treks Listed', value: String(treks.length), note: `${treks.filter(t => t.departures.some(d => d.seatsLeft > 0)).length} with open departures`, icon: '🏔️', color: 'bg-amber-50 text-amber-600' },
     { label: 'Confirmed + Completed Value', value: formatINR(acceptedValue), note: `${accepted.length} accepted bookings`, icon: '💰', color: 'bg-purple-50 text-purple-600' },

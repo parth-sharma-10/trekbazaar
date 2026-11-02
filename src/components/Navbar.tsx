@@ -47,7 +47,9 @@ export default function Navbar({ navigate, currentScreen, userRole }: NavbarProp
   const displayName = user?.name ?? 'Guest'
   const showAuthButtons = isPublicScreen && !user
 
-  const navItems = userRole === 'operator' ? operatorNav : userRole === 'admin' ? adminNav : userNav
+  // An unverified operator cannot publish, so the Add Trek link is hidden until an admin verifies them.
+  const operatorItems = user?.verified ? operatorNav : operatorNav.filter(item => item.screen !== 'add-trek')
+  const navItems = userRole === 'operator' ? operatorItems : userRole === 'admin' ? adminNav : userNav
 
 
   return (

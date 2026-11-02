@@ -48,6 +48,10 @@
     {
       "key": "testEmail",
       "value": ""
+    },
+    {
+      "key": "departure",
+      "value": ""
     }
   ],
   "item": [
@@ -195,7 +199,10 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"Returns an array\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                  "pm.test(\"Returns an array\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));",
+                  "const trek2 = pm.response.json().find(t => t.id === \"2\");",
+                  "pm.test(\"Trek 2 has an open departure\", () => pm.expect(trek2.departures.some(d => d.seatsLeft >= 2)).to.be.true);",
+                  "pm.collectionVariables.set(\"departure\", trek2.departures.find(d => d.seatsLeft >= 2).date);"
                 ]
               }
             }
@@ -552,7 +559,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"trekId\": \"2\",\n  \"date\": \"2027-06-12\",\n  \"participants\": 2,\n  \"traveller\": \"Rahul Kumar\",\n  \"amount\": 1\n}",
+              "raw": "{\n  \"trekId\": \"2\",\n  \"date\": \"{{departure}}\",\n  \"participants\": 2,\n  \"traveller\": \"Rahul Kumar\",\n  \"amount\": 1\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -579,7 +586,8 @@
                   "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
                   "pm.collectionVariables.set(\"bookingId\", pm.response.json().id);",
                   "pm.test(\"Server computed amount (2 x 11200 + 5%)\", () => pm.expect(pm.response.json().amount).to.eql(23520));",
-                  "pm.test(\"Owner taken from the session\", () => pm.expect(pm.response.json().email).to.eql(\"rahul.kumar@example.com\"));"
+                  "pm.test(\"Owner taken from the session\", () => pm.expect(pm.response.json().email).to.eql(\"rahul.kumar@example.com\"));",
+                  "pm.test(\"Starts as a Pending request\", () => pm.expect(pm.response.json().status).to.eql(\"Pending\"));"
                 ]
               }
             }
@@ -734,6 +742,52 @@
           ]
         },
         {
+          "name": "Booking off the schedule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trekId\": \"2\",\n  \"date\": \"2099-01-01\",\n  \"participants\": 1,\n  \"traveller\": \"X\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Booking for unknown trek",
           "request": {
             "method": "POST",
@@ -754,7 +808,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"trekId\": \"999\",\n  \"date\": \"2027-06-12\",\n  \"participants\": 1,\n  \"traveller\": \"X\"\n}",
+              "raw": "{\n  \"trekId\": \"999\",\n  \"date\": \"{{departure}}\",\n  \"participants\": 1,\n  \"traveller\": \"X\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1232,7 +1286,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"trekId\": \"1\",\n  \"date\": \"2027-06-12\",\n  \"participants\": 1,\n  \"traveller\": \"X\"\n}"
+              "raw": "{\n  \"trekId\": \"1\",\n  \"date\": \"{{departure}}\",\n  \"participants\": 1,\n  \"traveller\": \"X\"\n}"
             },
             "auth": {
               "type": "bearer",
@@ -1542,6 +1596,164 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status is 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Guest cannot write a review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trekId\": \"5\",\n  \"rating\": 5,\n  \"comment\": \"Lovely trek overall.\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Trekker cannot moderate reviews",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/none",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews",
+                "none"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Approved\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Trekker cannot verify an operator",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/op1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "op1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"verified\": false\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Guest sees only approved reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"All approved\", () => pm.response.json().forEach(r => pm.expect(r.status).to.eql(\"Approved\")));"
                 ]
               }
             }
