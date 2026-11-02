@@ -6,6 +6,8 @@ It started as a Figma Make UI/UX export (19 static screens). This repo turns tha
 
 > Treks, bookings and user accounts are stored in MongoDB behind an Express REST API. Passwords are hashed with scrypt. Checkout takes no payment, there are no auth tokens on the API yet, and messages, emails and SMS are simulated with on-screen notices.
 
+Live: **https://trekbazaar-eta.vercel.app** (Vercel, with MongoDB Atlas). The demo data is shared, so bookings made there are visible to everyone.
+
 ![Landing page](docs/landing.jpg)
 
 | Explore | Trek details | Operator dashboard |
@@ -47,7 +49,7 @@ It started as a Figma Make UI/UX export (19 static screens). This repo turns tha
 
 ## Run it
 
-Requires Node.js 22.18 or later and MongoDB running locally (default `mongodb://127.0.0.1:27017/trekbazaar`, override with `MONGO_URI`). The server and tests import the shared TypeScript helpers directly through Node's built-in type stripping.
+Requires Node.js 22.18 or later and MongoDB running locally (default `mongodb://127.0.0.1:27017/trekbazaar`, override with `MONGO_URI`). The seed script and tests import the TypeScript seed data directly through Node's built-in type stripping.
 
 ```bash
 npm install
@@ -59,11 +61,18 @@ npm run build      # type-check + production build into dist/
 npm run preview    # serve the production build
 ```
 
-To deploy under a sub-path (for example GitHub Pages at `/trekbazaar/`), set the base path at build time:
+## Deploy (Vercel)
+
+`vercel.json` builds the Vite frontend as static files and serves the Express app as one serverless function (`api/index.js`), with `/api/*` rewritten to it. The function needs a hosted MongoDB, for example a free MongoDB Atlas cluster that allows connections from `0.0.0.0/0`, since Vercel functions have no fixed IP.
 
 ```bash
-BASE_PATH=/trekbazaar/ npm run build
+vercel link
+vercel env add MONGO_URI production   # Atlas connection string, including /trekbazaar as the database
+MONGO_URI='<atlas uri>' npm run seed
+vercel deploy --prod
 ```
+
+Vercel compiles `.ts` files to `.js` without rewriting import paths, so server code imports `src/pricing.js` (plain JS) rather than `src/lib.ts`.
 
 ## Project structure
 
@@ -73,11 +82,13 @@ src/
   router.ts          parseHash / toHash (used with react-router-dom's HashRouter)
   api.ts             axios instance and error-message helper
   store.tsx          React context: loads treks and bookings from the API; user, role, wishlist and theme in localStorage
-  lib.ts             pure helpers: INR formatting, dates, departure batches, price breakdown, validators
+  lib.ts             pure helpers: INR formatting, dates, departure batches, validators
+  pricing.js         price breakdown, booking ids and limits, shared with the server
   logic.test.ts      node:test suite for router.ts and lib.ts
   data/treks.ts      seed treks and destinations
   components/        Navbar, Footer, TrekCard
   screens/           one file per screen (19)
+api/index.js         Vercel serverless entry: reuses one MongoDB connection, then hands off to the Express app
 server/
   index.js           Express app: JSON body parsing, request log, routes, 404 and error handler
   models.js          Mongoose schemas: Trek, Booking, User

@@ -1,7 +1,6 @@
 // Pure helpers shared by screens. No React here so they can be tested with `node --test`.
 
-export const SERVICE_FEE_RATE = 0.05
-export const MAX_PARTICIPANTS = 16
+export { MAX_PARTICIPANTS, SERVICE_FEE_RATE, newBookingId, priceBreakdown } from './pricing.js'
 
 export function formatINR(amount: number): string {
   return '₹' + Math.round(amount).toLocaleString('en-IN')
@@ -33,12 +32,6 @@ export function daysUntil(iso: string, from = today()): number {
   return Math.round(ms / 86_400_000)
 }
 
-export function priceBreakdown(pricePerPerson: number, participants: number) {
-  const subtotal = pricePerPerson * participants
-  const serviceFee = Math.round(subtotal * SERVICE_FEE_RATE)
-  return { subtotal, serviceFee, total: subtotal + serviceFee }
-}
-
 export interface Batch {
   date: string
   spots: number
@@ -52,10 +45,6 @@ export function getBatches(trekId: string, from = today(), count = 5): Batch[] {
     date: addDays(from, 14 + i * 21),
     spots: ((seed * 7 + i * 5) % 12) + 1,
   }))
-}
-
-export function newBookingId(now = new Date()): string {
-  return `TB-${now.getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

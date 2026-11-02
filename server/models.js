@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { MAX_PARTICIPANTS } from '../src/lib.ts'
+import { MAX_PARTICIPANTS } from '../src/pricing.js'
 
 // Documents are addressed by their own string `id` (e.g. "3", "TB-2026-389123") so the
 // frontend keeps the ids it already uses in URLs. _id and __v never leave the server.

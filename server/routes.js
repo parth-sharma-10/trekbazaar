@@ -1,6 +1,6 @@
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto'
 import express from 'express'
-import { newBookingId, priceBreakdown } from '../src/lib.ts'
+import { newBookingId, priceBreakdown } from '../src/pricing.js'
 import { Booking, Trek, User } from './models.js'
 
 const opts = { returnDocument: 'after', runValidators: true }
