@@ -44,6 +44,10 @@
     {
       "key": "forgedToken",
       "value": "eyJzdWIiOiJhZG1pbjEiLCJleHAiOjk5OTk5OTk5OTk5OTl9.forged"
+    },
+    {
+      "key": "testEmail",
+      "value": ""
     }
   ],
   "item": [
@@ -845,7 +849,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Postman Tester\",\n  \"email\": \"postman.tester@example.com\",\n  \"password\": \"trek1234\"\n}",
+              "raw": "{\n  \"name\": \"Postman Tester\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"trek1234\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -863,6 +867,15 @@
                   "pm.collectionVariables.set(\"userId\", pm.response.json().user.id);",
                   "pm.collectionVariables.set(\"registeredToken\", pm.response.json().token);",
                   "pm.test(\"No password hash\", () => pm.expect(pm.response.json().user).to.not.have.property(\"passwordHash\"));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"testEmail\", `postman.${Date.now()}@example.com`);"
                 ]
               }
             }
@@ -890,7 +903,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Again\",\n  \"email\": \"postman.tester@example.com\",\n  \"password\": \"trek1234\"\n}",
+              "raw": "{\n  \"name\": \"Again\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"trek1234\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1491,6 +1504,87 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status is 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Trekker cannot delete a user",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cleanup",
+      "item": [
+        {
+          "name": "Admin deletes the registered test user",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));"
                 ]
               }
             }

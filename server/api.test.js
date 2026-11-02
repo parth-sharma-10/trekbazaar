@@ -205,6 +205,18 @@ test('users: change password needs the current one and replaces the old', async 
   assert.equal((await call('POST', '/users/login', { email: 'pw@example.com', password: 'second-pass' })).status, 200)
 })
 
+test('users: only an admin deletes accounts, and never their own', async () => {
+  const reg = await call('POST', '/users/register', { name: 'Gone', email: 'gone@example.com', password: 'longenough' })
+  const { id } = reg.body.user
+  assert.equal((await call('DELETE', `/users/${id}`)).status, 401)
+  assert.equal((await call('DELETE', `/users/${id}`, undefined, tokens.user)).status, 403)
+  assert.equal((await call('DELETE', `/users/${id}`, undefined, tokens.operator)).status, 403)
+  assert.equal((await call('DELETE', '/users/admin1', undefined, tokens.admin)).status, 403)
+  assert.equal((await call('DELETE', `/users/${id}`, undefined, tokens.admin)).status, 200)
+  assert.equal((await call('POST', '/users/login', { email: 'gone@example.com', password: 'longenough' })).status, 401)
+  assert.equal((await call('DELETE', `/users/${id}`, undefined, tokens.admin)).status, 404)
+})
+
 test('auth: forged, tampered and expired tokens are rejected', async () => {
   const [payload, sig] = tokens.user.split('.')
   const forged = Buffer.from(JSON.stringify({ sub: 'admin1', exp: Date.now() + 1e6 })).toString('base64url')

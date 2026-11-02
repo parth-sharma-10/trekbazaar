@@ -221,3 +221,12 @@ users.put('/:id', requireLogin, async (req, res) => {
   if (!user) return notFound(res, 'User')
   res.json(user)
 })
+
+// Admins only, and never themselves. The user's bookings stay as a record of what was sold.
+users.delete('/:id', requireRole('admin'), async (req, res) => {
+  if (req.params.id === req.user.id) return res.status(403).json({ error: 'You cannot delete your own account' })
+  const user = await User.findOneAndDelete({ id: req.params.id })
+  if (!user) return notFound(res, 'User')
+  await LoginFailure.deleteMany({ email: user.email })
+  res.json({ message: 'User deleted', id: user.id })
+})
