@@ -24,10 +24,10 @@ export default function Settings({ navigate, userRole, setUserRole }: SettingsPr
   const [saved, setSaved] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!profile.name.trim()) return notify('Name cannot be empty')
     if (!isEmail(profile.email)) return notify('Enter a valid email address')
-    updateUser({ ...profile, name: profile.name.trim(), email: profile.email.trim() })
+    if (!(await updateUser({ ...profile, name: profile.name.trim(), email: profile.email.trim() }))) return
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -271,14 +271,14 @@ export default function Settings({ navigate, userRole, setUserRole }: SettingsPr
 
                 <div className="border-t border-slate-100 pt-5">
                   <h3 className="font-semibold text-slate-900 mb-1">Demo data</h3>
-                  <p className="text-xs text-slate-400 mb-3">Bookings, wishlist and published treks are stored in this browser. Reset to start over.</p>
+                  <p className="text-xs text-slate-400 mb-3">Treks and bookings are stored on the server. This resets the wishlist, role and theme saved in this browser, and logs you out.</p>
                   {confirmReset ? (
                     <div className="flex gap-2">
-                      <button onClick={() => { resetDemo(); setConfirmReset(false); navigate('landing') }} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">Yes, reset everything</button>
+                      <button onClick={() => { resetDemo(); setConfirmReset(false); navigate('landing') }} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">Yes, reset</button>
                       <button onClick={() => setConfirmReset(false)} className="border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">Keep my data</button>
                     </div>
                   ) : (
-                    <button onClick={() => setConfirmReset(true)} className="border border-red-200 text-red-500 px-4 py-2 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors">Reset demo data</button>
+                    <button onClick={() => setConfirmReset(true)} className="border border-red-200 text-red-500 px-4 py-2 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors">Reset browser data</button>
                   )}
                 </div>
               </div>

@@ -14,7 +14,7 @@ interface UserDashboardProps {
 const VETERAN_TREKS = 10
 
 export default function UserDashboard({ navigate, userRole, setUserRole }: UserDashboardProps) {
-  const { bookings, wishlist, treks, findTrek } = useStore()
+  const { myBookings: bookings, wishlist, treks, findTrek } = useStore()
   const user = useCurrentUser()
   const upcomingBookings = bookings
     .filter(b => (b.status === 'Confirmed' || b.status === 'Pending') && daysUntil(b.date) >= 0)

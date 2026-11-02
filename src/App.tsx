@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import type { Screen, NavigateFn, UserRole } from './types'
-import { parseHash, toHash, type Route } from './router'
+import { parseHash, toHash } from './router'
 import { useStore } from './store'
 
 import Landing from './screens/Landing'
@@ -61,17 +62,14 @@ const titles: Record<Screen, string> = {
 }
 
 export default function App() {
-  const { role, setRole, toast, findTrek } = useStore()
-  const [route, setRoute] = useState<Route>(() => parseHash(window.location.hash))
+  const { role, setRole, toast, findTrek, status, loadError, reload } = useStore()
+  const location = useLocation()
+  const routerNavigate = useNavigate()
+  const route = parseHash(`#${location.pathname}${location.search}`)
 
   useEffect(() => {
-    const onHashChange = () => {
-      setRoute(parseHash(window.location.hash))
-      window.scrollTo({ top: 0 })
-    }
-    window.addEventListener('hashchange', onHashChange)
-    return () => window.removeEventListener('hashchange', onHashChange)
-  }, [])
+    window.scrollTo({ top: 0 })
+  }, [location.pathname, location.search])
 
   const { screen, query } = route
 
@@ -86,10 +84,26 @@ export default function App() {
   const navigate: NavigateFn = (next, params) => {
     const hash = toHash(next, params)
     if (hash === window.location.hash) window.scrollTo({ top: 0, behavior: 'smooth' })
-    else window.location.hash = hash
+    else routerNavigate(hash.slice(1))
   }
 
   const commonProps = { navigate, userRole: role, setUserRole: setRole }
+
+  if (status !== 'ready') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-slate-50 px-4 text-center">
+        {status === 'loading' ? (
+          <p className="text-slate-500" role="status">Loading treks…</p>
+        ) : (
+          <>
+            <p className="text-slate-700 font-medium" role="alert">{loadError}</p>
+            <p className="text-sm text-slate-500">Start the API with <code>npm run server</code>, then retry.</p>
+            <button onClick={reload} className="bg-forest hover:bg-forest-dark text-white px-5 py-2.5 rounded-full text-sm font-semibold">Retry</button>
+          </>
+        )}
+      </div>
+    )
+  }
 
   const renderScreen = () => {
     switch (screen) {

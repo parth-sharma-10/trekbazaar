@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import Navbar from '../components/Navbar'
 import { useStore } from '../store'
 import { addDays, formatINR, today } from '../lib'
@@ -28,7 +29,13 @@ const trekSales: Record<string, { bookings: number; revenue: number }> = {
 const OPERATOR_ID = 'op1'
 
 export default function OperatorDashboard({ navigate, userRole, setUserRole }: OperatorDashboardProps) {
-  const { treks } = useStore()
+  const { treks, deleteTrek, notify } = useStore()
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null)
+
+  const remove = async (id: string, title: string) => {
+    setConfirmingDelete(null)
+    if (await deleteTrek(id)) notify(`${title} deleted`)
+  }
   const myTreks = treks.filter(t => t.operatorId === OPERATOR_ID)
   const stats = [
     { label: 'Active Treks', value: String(myTreks.length), change: '+1', up: true, icon: '🏔️', color: 'bg-forest-50 text-forest' },
@@ -144,7 +151,17 @@ export default function OperatorDashboard({ navigate, userRole, setUserRole }: O
                         <div className="text-xs text-slate-400">{sales.bookings} bookings · {t.reviewCount > 0 ? `⭐ ${t.rating}` : 'New'}</div>
                         <div className="flex items-center justify-between mt-1">
                           <span className="text-xs font-semibold text-forest">{formatINR(sales.revenue)}</span>
-                          <button onClick={() => navigate('add-trek', { edit: t.id })} className="text-xs font-medium text-slate-500 hover:text-forest">Edit</button>
+                          {confirmingDelete === t.id ? (
+                            <span className="flex gap-2">
+                              <button onClick={() => remove(t.id, t.title)} className="text-xs font-semibold text-red-600 hover:text-red-700">Confirm delete</button>
+                              <button onClick={() => setConfirmingDelete(null)} className="text-xs font-medium text-slate-500">Keep</button>
+                            </span>
+                          ) : (
+                            <span className="flex gap-3">
+                              <button onClick={() => navigate('add-trek', { edit: t.id })} className="text-xs font-medium text-slate-500 hover:text-forest">Edit</button>
+                              <button onClick={() => setConfirmingDelete(t.id)} className="text-xs font-medium text-slate-500 hover:text-red-600">Delete</button>
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

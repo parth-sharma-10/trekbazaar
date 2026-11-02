@@ -8,12 +8,13 @@ interface SignUpProps {
 }
 
 export default function SignUp({ navigate, initialRole }: SignUpProps) {
-  const { login, notify } = useStore()
+  const { register, notify } = useStore()
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', role: initialRole })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    login({ name: form.name.trim(), email: form.email.trim(), phone: form.phone ? `+91 ${form.phone.trim()}` : '' }, form.role)
+    const user = await register({ ...form, name: form.name.trim(), email: form.email.trim(), phone: form.phone ? `+91 ${form.phone.trim()}` : '' })
+    if (!user) return
     notify(form.role === 'operator' ? 'Operator account created. Verification usually takes 2–3 business days.' : `Welcome to TrekBazaar, ${form.name.trim().split(' ')[0]}!`)
     navigate(form.role === 'operator' ? 'operator-dashboard' : 'user-dashboard')
   }

@@ -1,33 +1,37 @@
 import { useState } from 'react'
-import { DEMO_USER, useStore } from '../store'
+import { DEMO_PASSWORD, DEMO_USER, useStore, type User } from '../store'
 import type { NavigateFn } from '../types'
 
 interface LoginProps {
   navigate: NavigateFn
 }
 
-// "rahul.kumar@x.com" -> "Rahul Kumar"
-function nameFromEmail(email: string): string {
-  return email.split('@')[0].split(/[._-]+/).filter(Boolean).map(p => p[0].toUpperCase() + p.slice(1)).join(' ') || 'Trekker'
-}
+const homeFor = { user: 'user-dashboard', operator: 'operator-dashboard', admin: 'admin-dashboard' } as const
 
 export default function Login({ navigate }: LoginProps) {
   const { login, notify } = useStore()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
+  const [busy, setBusy] = useState(false)
 
-  // Demo auth: any email and password are accepted; there is no backend to check them against.
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault()
-    login({ name: nameFromEmail(email), email: email.trim() }, 'user')
-    navigate('user-dashboard')
+  const enter = (user: User | undefined) => {
+    setBusy(false)
+    if (user) navigate(homeFor[user.role ?? 'user'])
   }
 
-  const socialLogin = (provider: string) => {
-    login(DEMO_USER, 'user')
-    notify(`Signed in with ${provider} (demo)`)
-    navigate('user-dashboard')
+  // Credentials are checked by POST /api/users/login against the users collection.
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setBusy(true)
+    enter(await login(email, password))
+  }
+
+  // ponytail: no OAuth provider is configured, so social buttons sign in to the seeded demo account.
+  const socialLogin = async (provider: string) => {
+    const user = await login(DEMO_USER.email, DEMO_PASSWORD)
+    if (user) notify(`Signed in with ${provider} (demo account)`)
+    enter(user)
   }
 
   return (
