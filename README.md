@@ -6,7 +6,7 @@ It started as a Figma Make UI/UX export (19 static screens). This repo turns tha
 
 > Treks, bookings and user accounts are stored in MongoDB behind an Express REST API. Passwords are hashed with scrypt. API calls carry a signed session token and every route checks the caller's role. Checkout takes no payment, and messages, emails and SMS are simulated with on-screen notices.
 
-Live: **https://trekbazaar-eta.vercel.app** (Vercel, with MongoDB Atlas). The demo data is shared, so bookings made there are visible to everyone. As of 2026-11-03 the live database still holds the earlier 8-trek seed; the 28-trek seed below has not been loaded there.
+Live: **https://trekbazaar-eta.vercel.app** (Vercel, with MongoDB Atlas). The demo data is shared, so bookings made there are visible to everyone. As of 2026-11-03 the live database still holds the earlier 8-trek seed, and none of those treks has a scheduled departure, so nothing can be booked there until it is re-seeded with the 28-trek data below (which replaces every live account).
 
 ![Landing page](docs/landing.jpg)
 
