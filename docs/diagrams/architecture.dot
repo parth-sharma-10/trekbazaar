@@ -7,18 +7,20 @@ digraph G {
     router [label="react-router-dom\nHashRouter"];
     store [label="StoreProvider\n(Context + hooks)"];
     axios [label="axios client\nsrc/api.ts"];
-    ls [label="localStorage\nwishlist, role, theme", fillcolor="#f5f5f5", color="#999999"];
+    ls [label="localStorage\nsession token, wishlist, theme", fillcolor="#f5f5f5", color="#999999"];
     router -> ui; ui -> store [label="actions"]; store -> ui [label="state"]; store -> axios; store -> ls [style=dashed];
   }
   subgraph cluster_server { label="Node.js + Express 5 (port 4000)"; fontname="Helvetica-Bold"; fontsize=11; style="rounded"; color="#999999";
     mw [label="express.json()\nrequest logger"];
-    routes [label="Routers\n/api/treks\n/api/bookings\n/api/users"];
+    auth [label="authenticate\nverify signed token,\nload user + role"];
+    guard [label="requireRole(...)\nper route"];
+    routes [label="Routers\n/api/treks\n/api/bookings\n/api/users\n/api/reviews"];
     err [label="404 + error\nhandler"];
-    models [label="Mongoose models\nTrek, Booking, User"];
-    mw -> routes; routes -> models; routes -> err [style=dashed, label="throw"];
+    models [label="Mongoose models\nTrek, Booking, User,\nReview, LoginFailure"];
+    mw -> auth -> guard -> routes; guard -> err [style=dashed, label="401 / 403"]; routes -> models; routes -> err [style=dashed, label="throw"];
   }
   db [label="MongoDB\ndatabase: trekbazaar", shape=cylinder, fillcolor="#e8f0fb", color="#1f5fbf"];
-  axios -> mw [label="HTTP JSON\n(Vite proxy /api)"];
+  axios -> mw [label="HTTP JSON + Bearer token\n(Vite proxy /api)"];
   models -> db [label="queries"];
   db -> models [style=dashed];
   routes -> axios [style=dashed, label="JSON response\n+ status code", constraint=false];
