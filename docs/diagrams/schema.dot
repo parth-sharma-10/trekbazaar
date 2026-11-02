@@ -1,0 +1,40 @@
+digraph G {
+  rankdir=LR; bgcolor=white; pad=0.3; nodesep=0.6;
+  node [shape=plain, fontname="Helvetica", fontsize=10];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  treks [label=<<table border="1" cellborder="0" cellspacing="0" cellpadding="4" color="#2e7d32">
+    <tr><td bgcolor="#2e7d32"><font color="white"><b>treks</b></font></td></tr>
+    <tr><td align="left" port="id"><b>id</b> : String (unique)</td></tr>
+    <tr><td align="left">title : String (min 3)</td></tr>
+    <tr><td align="left">location, state : String</td></tr>
+    <tr><td align="left">difficulty : enum Easy..Expert</td></tr>
+    <tr><td align="left">durationDays : Number (1-30)</td></tr>
+    <tr><td align="left">price : Number (min 500)</td></tr>
+    <tr><td align="left" port="op">operatorId, operator : String</td></tr>
+    <tr><td align="left">itinerary : [{day, title, description}]</td></tr>
+    <tr><td align="left">gallery, tags, highlights : [String]</td></tr>
+    <tr><td align="left">rating, reviewCount, createdAt</td></tr></table>>];
+  bookings [label=<<table border="1" cellborder="0" cellspacing="0" cellpadding="4" color="#1f5fbf">
+    <tr><td bgcolor="#1f5fbf"><font color="white"><b>bookings</b></font></td></tr>
+    <tr><td align="left"><b>id</b> : String "TB-YYYY-nnnnnn"</td></tr>
+    <tr><td align="left" port="trek">trekId : String (indexed)</td></tr>
+    <tr><td align="left">date : String YYYY-MM-DD</td></tr>
+    <tr><td align="left">participants : Number (1-16)</td></tr>
+    <tr><td align="left">amount : Number (server-computed)</td></tr>
+    <tr><td align="left">status : enum Pending, Confirmed,<br align="left"/>  Completed, Cancelled</td></tr>
+    <tr><td align="left">traveller : String</td></tr>
+    <tr><td align="left" port="email">email : String</td></tr>
+    <tr><td align="left">createdAt, updatedAt</td></tr></table>>];
+  users [label=<<table border="1" cellborder="0" cellspacing="0" cellpadding="4" color="#8a5a00">
+    <tr><td bgcolor="#8a5a00"><font color="white"><b>users</b></font></td></tr>
+    <tr><td align="left" port="id"><b>id</b> : String (unique)</td></tr>
+    <tr><td align="left">name : String</td></tr>
+    <tr><td align="left" port="email">email : String (unique, lowercase)</td></tr>
+    <tr><td align="left">passwordHash : String (scrypt)</td></tr>
+    <tr><td align="left">role : enum user, operator, admin</td></tr>
+    <tr><td align="left">phone, city, bio : String</td></tr>
+    <tr><td align="left">createdAt, updatedAt</td></tr></table>>];
+  bookings:trek -> treks:id [label="many to one"];
+  bookings:email -> users:email [label="many to one"];
+  treks:op -> users:id [label="operator\n(many to one)", style=dashed];
+}

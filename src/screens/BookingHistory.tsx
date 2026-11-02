@@ -20,16 +20,16 @@ const statusConfig: Record<BookingStatus, { bg: string; text: string }> = {
 }
 
 export default function BookingHistory({ navigate, userRole, setUserRole }: BookingHistoryProps) {
-  const { bookings: allBookings, findTrek, setBookingStatus, notify } = useStore()
+  const { myBookings: allBookings, findTrek, setBookingStatus, notify } = useStore()
   const [filter, setFilter] = useState('All')
   const [confirmingCancel, setConfirmingCancel] = useState<string | null>(null)
   const statuses = ['All', 'Confirmed', 'Pending', 'Completed', 'Cancelled']
 
   const filtered = filter === 'All' ? allBookings : allBookings.filter(b => b.status === filter)
 
-  const cancel = (id: string, date: string) => {
-    setBookingStatus(id, 'Cancelled')
+  const cancel = async (id: string, date: string) => {
     setConfirmingCancel(null)
+    if (!(await setBookingStatus(id, 'Cancelled'))) return
     notify(daysUntil(date) >= FREE_CANCELLATION_DAYS
       ? `Booking ${id} cancelled. Full refund in 5–7 business days (demo).`
       : `Booking ${id} cancelled. Departures within ${FREE_CANCELLATION_DAYS} days are not refundable.`)

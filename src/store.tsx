@@ -1,9 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { treks as seedTreks, type Trek } from './data/treks'
-import { addDays, priceBreakdown, today } from './lib'
+import type { Trek } from './data/treks'
+import { api, errorMessage } from './api'
 import type { UserRole } from './types'
 
 export interface User {
+  id?: string
+  role?: UserRole
   name: string
   email: string
   phone: string
@@ -21,20 +23,23 @@ export interface Booking {
   amount: number
   status: BookingStatus
   traveller: string
+  email?: string
 }
 
-interface PersistedState {
+export type NewBooking = Omit<Booking, 'id' | 'amount' | 'status' | 'email'>
+
+// Treks, bookings and accounts live in MongoDB behind the Express API.
+// Only per-browser preferences are kept in localStorage.
+interface Prefs {
   user: User | null
   role: UserRole
   wishlist: string[]
-  bookings: Booking[]
-  customTreks: Trek[]
   darkMode: boolean
 }
 
-// ponytail: one localStorage key stands in for a backend; swap these setters for API calls when one exists.
-const STORAGE_KEY = 'trekbazaar:v1'
+const STORAGE_KEY = 'trekbazaar:v2'
 
+// Shown when nobody is logged in; matches the seeded demo account (password trek1234).
 export const DEMO_USER: User = {
   name: 'Rahul Kumar',
   email: 'rahul.kumar@example.com',
@@ -42,62 +47,44 @@ export const DEMO_USER: User = {
   city: 'Delhi',
   bio: 'Passionate trekker exploring the Himalayas one trail at a time.',
 }
+export const DEMO_PASSWORD = 'trek1234'
 
-function seedBooking(id: string, trekId: string, offsetDays: number, participants: number, status: BookingStatus): Booking {
-  const trek = seedTreks.find(t => t.id === trekId)!
-  return {
-    id,
-    trekId,
-    date: addDays(today(), offsetDays),
-    participants,
-    amount: priceBreakdown(trek.price, participants).total,
-    status,
-    traveller: DEMO_USER.name,
-  }
-}
-
-function initialState(): PersistedState {
-  const year = new Date().getFullYear()
+function initialPrefs(): Prefs {
   const prefersDark = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false
-  return {
-    user: null,
-    role: 'user',
-    wishlist: ['1', '4', '5'],
-    bookings: [
-      seedBooking(`TB-${year}-389123`, '1', 47, 2, 'Confirmed'),
-      seedBooking(`TB-${year}-245678`, '2', 12, 1, 'Pending'),
-      seedBooking(`TB-${year - 1}-178923`, '5', -260, 3, 'Completed'),
-      seedBooking(`TB-${year - 1}-093421`, '8', -360, 2, 'Completed'),
-      seedBooking(`TB-${year - 1}-052341`, '3', -420, 1, 'Cancelled'),
-    ],
-    customTreks: [],
-    darkMode: prefersDark,
-  }
+  return { user: null, role: 'user', wishlist: ['1', '4', '5'], darkMode: prefersDark }
 }
 
-function load(): PersistedState {
+function load(): Prefs {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return { ...initialState(), ...JSON.parse(raw) }
+    if (raw) return { ...initialPrefs(), ...JSON.parse(raw) }
   } catch {
-    // Private mode or corrupted JSON: start from the seed data.
+    // Private mode or corrupted JSON: start from the defaults.
   }
-  return initialState()
+  return initialPrefs()
 }
 
-interface Store extends PersistedState {
+type LoadState = 'loading' | 'ready' | 'error'
+
+interface Store extends Prefs {
+  status: LoadState
+  loadError: string | null
+  reload: () => void
   treks: Trek[]
+  bookings: Booking[]
+  myBookings: Booking[]
   findTrek: (id: string | undefined) => Trek | undefined
   setRole: (role: UserRole) => void
-  login: (user: Partial<User> & Pick<User, 'name' | 'email'>, role: UserRole) => void
+  login: (email: string, password: string) => Promise<User | undefined>
+  register: (profile: Pick<User, 'name' | 'email' | 'phone'> & { password: string; role: UserRole }) => Promise<User | undefined>
   logout: () => void
-  updateUser: (patch: Partial<User>) => void
+  updateUser: (patch: Partial<User>) => Promise<User | undefined>
   toggleWishlist: (trekId: string) => void
-  addBooking: (booking: Booking) => void
-  setBookingStatus: (id: string, status: BookingStatus) => void
-  saveTrek: (trek: Trek) => void
+  addBooking: (booking: NewBooking) => Promise<Booking | undefined>
+  setBookingStatus: (id: string, status: BookingStatus) => Promise<Booking | undefined>
+  saveTrek: (trek: Trek, isNew: boolean) => Promise<Trek | undefined>
+  deleteTrek: (id: string) => Promise<boolean>
   resetDemo: () => void
-  darkMode: boolean
   toggleDarkMode: () => void
   setDarkMode: (enabled: boolean) => void
   toast: string | null
@@ -107,27 +94,25 @@ interface Store extends PersistedState {
 const StoreContext = createContext<Store | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<PersistedState>(load)
+  const [prefs, setPrefs] = useState<Prefs>(load)
+  const [treks, setTreks] = useState<Trek[]>([])
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [status, setStatus] = useState<LoadState>('loading')
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const toastTimer = useRef<number | undefined>(undefined)
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs))
     } catch {
       // Storage full or blocked: the session still works in memory.
     }
-  }, [state])
+  }, [prefs])
 
   useEffect(() => {
-    if (typeof document !== 'undefined') {
-      if (state.darkMode) {
-        document.documentElement.classList.add('dark')
-      } else {
-        document.documentElement.classList.remove('dark')
-      }
-    }
-  }, [state.darkMode])
+    document.documentElement.classList.toggle('dark', prefs.darkMode)
+  }, [prefs.darkMode])
 
   const notify = useCallback((message: string) => {
     window.clearTimeout(toastTimer.current)
@@ -135,43 +120,96 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     toastTimer.current = window.setTimeout(() => setToast(null), 3000)
   }, [])
 
+  const reload = useCallback(() => {
+    setStatus('loading')
+    Promise.all([api.get<Trek[]>('/treks'), api.get<Booking[]>('/bookings')])
+      .then(([t, b]) => {
+        setTreks(t.data)
+        setBookings(b.data)
+        setStatus('ready')
+      })
+      .catch(err => {
+        setLoadError(errorMessage(err))
+        setStatus('error')
+      })
+  }, [])
+
+  useEffect(reload, [reload])
+
   const store = useMemo<Store>(() => {
-    // Custom treks with a seed id are edits of that seed trek; others are new listings.
-    const overrides = new Map(state.customTreks.map(t => [t.id, t]))
-    const seedIds = new Set(seedTreks.map(t => t.id))
-    const treks = [
-      ...seedTreks.map(t => overrides.get(t.id) ?? t),
-      ...state.customTreks.filter(t => !seedIds.has(t.id)),
-    ]
+    // Runs an API call; on failure shows the server's message and resolves to undefined.
+    async function attempt<T>(call: () => Promise<T>): Promise<T | undefined> {
+      try {
+        return await call()
+      } catch (err) {
+        notify(errorMessage(err))
+        return undefined
+      }
+    }
+
+    const signIn = (user: User) => {
+      setPrefs(p => ({ ...p, user, role: user.role ?? 'user' }))
+      return user
+    }
+    const replaceBooking = (b: Booking) => {
+      setBookings(list => list.map(x => (x.id === b.id ? b : x)))
+      return b
+    }
+    const currentEmail = (prefs.user ?? DEMO_USER).email.toLowerCase()
 
     return {
-      ...state,
+      ...prefs,
+      status,
+      loadError,
+      reload,
       treks,
+      bookings,
+      myBookings: bookings.filter(b => b.email === currentEmail),
       findTrek: id => treks.find(t => t.id === id),
-      setRole: role => setState(s => ({ ...s, role })),
-      login: (user, role) => setState(s => ({ ...s, role, user: { ...DEMO_USER, phone: '', city: '', bio: '', ...user } })),
-      logout: () => setState(s => ({ ...s, user: null, role: 'user' })),
-      updateUser: patch => setState(s => ({ ...s, user: { ...(s.user ?? DEMO_USER), ...patch } })),
-      toggleWishlist: id => setState(s => ({
-        ...s,
-        wishlist: s.wishlist.includes(id) ? s.wishlist.filter(x => x !== id) : [...s.wishlist, id],
+      setRole: role => setPrefs(p => ({ ...p, role })),
+      login: (email, password) => attempt(async () =>
+        signIn((await api.post<User>('/users/login', { email, password })).data)),
+      register: profile => attempt(async () =>
+        signIn((await api.post<User>('/users/register', profile)).data)),
+      logout: () => setPrefs(p => ({ ...p, user: null, role: 'user' })),
+      updateUser: patch => attempt(async () => {
+        const merged = { ...(prefs.user ?? DEMO_USER), ...patch }
+        const saved = merged.id ? (await api.put<User>(`/users/${merged.id}`, merged)).data : merged
+        setPrefs(p => ({ ...p, user: saved }))
+        return saved
+      }),
+      toggleWishlist: id => setPrefs(p => ({
+        ...p,
+        wishlist: p.wishlist.includes(id) ? p.wishlist.filter(x => x !== id) : [...p.wishlist, id],
       })),
-      addBooking: booking => setState(s => ({ ...s, bookings: [booking, ...s.bookings] })),
-      setBookingStatus: (id, status) => setState(s => ({
-        ...s,
-        bookings: s.bookings.map(b => (b.id === id ? { ...b, status } : b)),
+      addBooking: booking => attempt(async () => {
+        const { data } = await api.post<Booking>('/bookings', { ...booking, email: currentEmail })
+        setBookings(list => [data, ...list])
+        return data
+      }),
+      setBookingStatus: (id, next) => attempt(async () =>
+        replaceBooking((await api.patch<Booking>(`/bookings/${id}`, { status: next })).data)),
+      saveTrek: (trek, isNew) => attempt(async () => {
+        const { data } = isNew ? await api.post<Trek>('/treks', trek) : await api.put<Trek>(`/treks/${trek.id}`, trek)
+        setTreks(list => (isNew ? [...list, data] : list.map(t => (t.id === data.id ? data : t))))
+        return data
+      }),
+      deleteTrek: async id => !!(await attempt(async () => {
+        await api.delete(`/treks/${id}`)
+        setTreks(list => list.filter(t => t.id !== id))
+        setPrefs(p => ({ ...p, wishlist: p.wishlist.filter(x => x !== id) }))
+        return true
       })),
-      saveTrek: trek => setState(s => ({
-        ...s,
-        customTreks: [...s.customTreks.filter(t => t.id !== trek.id), trek],
-      })),
-      resetDemo: () => setState(initialState()),
-      toggleDarkMode: () => setState(s => ({ ...s, darkMode: !s.darkMode })),
-      setDarkMode: enabled => setState(s => ({ ...s, darkMode: enabled })),
+      resetDemo: () => {
+        setPrefs(initialPrefs())
+        reload()
+      },
+      toggleDarkMode: () => setPrefs(p => ({ ...p, darkMode: !p.darkMode })),
+      setDarkMode: enabled => setPrefs(p => ({ ...p, darkMode: enabled })),
       toast,
       notify,
     }
-  }, [state, toast, notify])
+  }, [prefs, treks, bookings, status, loadError, reload, toast, notify])
 
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>
 }

@@ -3,7 +3,7 @@ import Navbar from '../components/Navbar'
 import { useStore } from '../store'
 import {
   formatDate, formatINR, getBatches, isCardNumber, isEmail, isExpiry, isPhone, isUpiId,
-  MAX_PARTICIPANTS, newBookingId, priceBreakdown,
+  MAX_PARTICIPANTS, priceBreakdown,
 } from '../lib'
 import type { NavigateFn, UserRole } from '../types'
 
@@ -110,25 +110,20 @@ export default function BookingFlow({ navigate, trekId, initialDate, initialPart
     }
   }
 
-  const pay = () => {
+  const pay = async () => {
     const found = validatePayment()
     setErrors(found)
     if (Object.keys(found).length > 0) return focusFirstError()
     setProcessing(true)
-    // ponytail: simulated gateway delay; replace with a real payment intent when a backend exists.
-    window.setTimeout(() => {
-      const id = newBookingId()
-      addBooking({
-        id,
-        trekId: trek.id,
-        date: form.date,
-        participants: form.participants,
-        amount: total,
-        status: 'Confirmed',
-        traveller: `${form.firstName.trim()} ${form.lastName.trim()}`,
-      })
-      navigate('payment-success', { booking: id })
-    }, 1200)
+    // ponytail: no payment gateway; the server stores the booking as Confirmed and computes the amount.
+    const booking = await addBooking({
+      trekId: trek.id,
+      date: form.date,
+      participants: form.participants,
+      traveller: `${form.firstName.trim()} ${form.lastName.trim()}`,
+    })
+    setProcessing(false)
+    if (booking) navigate('payment-success', { booking: booking.id })
   }
 
   const steps = ['Select Dates', 'Participants', 'Payment']

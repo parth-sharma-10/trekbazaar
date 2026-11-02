@@ -4,7 +4,7 @@ A frontend for a trekking marketplace for Indian treks. Trekkers can browse, fil
 
 It started as a Figma Make UI/UX export (19 static screens). This repo turns that export into a runnable app: it adds URL routing, shared state that survives a reload, form validation, and working versions of the buttons that did nothing in the design.
 
-> **This is a frontend demo with no backend.** Data lives in `localStorage` in your browser. Login accepts any email and password. Checkout takes no payment. Messages, emails and SMS are simulated with on-screen notices.
+> Treks, bookings and user accounts are stored in MongoDB behind an Express REST API. Passwords are hashed with scrypt. Checkout takes no payment, there are no auth tokens on the API yet, and messages, emails and SMS are simulated with on-screen notices.
 
 ![Landing page](docs/landing.jpg)
 
@@ -47,12 +47,14 @@ It started as a Figma Make UI/UX export (19 static screens). This repo turns tha
 
 ## Run it
 
-Requires Node.js 22.18 or later. The test script runs TypeScript directly through Node's built-in type stripping.
+Requires Node.js 22.18 or later and MongoDB running locally (default `mongodb://127.0.0.1:27017/trekbazaar`, override with `MONGO_URI`). The server and tests import the shared TypeScript helpers directly through Node's built-in type stripping.
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173
-npm test           # unit tests for routing, pricing, dates and validators
+npm run seed       # load the demo treks, bookings and accounts into MongoDB
+npm run server     # Express API on http://localhost:4000
+npm run dev        # http://localhost:5173 (proxies /api to the server)
+npm test           # unit tests + API integration tests (uses the trekbazaar_test database)
 npm run build      # type-check + production build into dist/
 npm run preview    # serve the production build
 ```
@@ -68,16 +70,45 @@ BASE_PATH=/trekbazaar/ npm run build
 ```
 src/
   App.tsx            hash router: maps routes to screens, sets the page title, renders the toast
-  router.ts          parseHash / toHash
-  store.tsx          React context: user, role, wishlist, bookings, custom treks, toast. Persisted to localStorage
+  router.ts          parseHash / toHash (used with react-router-dom's HashRouter)
+  api.ts             axios instance and error-message helper
+  store.tsx          React context: loads treks and bookings from the API; user, role, wishlist and theme in localStorage
   lib.ts             pure helpers: INR formatting, dates, departure batches, price breakdown, validators
   logic.test.ts      node:test suite for router.ts and lib.ts
   data/treks.ts      seed treks and destinations
   components/        Navbar, Footer, TrekCard
   screens/           one file per screen (19)
+server/
+  index.js           Express app: JSON body parsing, request log, routes, 404 and error handler
+  models.js          Mongoose schemas: Trek, Booking, User
+  routes.js          REST routes for /api/treks, /api/bookings, /api/users
+  seed.js            resets the database to the demo data
+  api.test.js        node:test integration tests against a real MongoDB
+postman/             Postman collection for every endpoint
 ```
 
-The stack is React 19, TypeScript, Vite 8 and Tailwind CSS v4. There are no other runtime dependencies.
+The stack is MongoDB, Express 5, React 19 and Node.js (MERN), with Mongoose 9, axios, react-router-dom 7, TypeScript, Vite 8 and Tailwind CSS v4.
+
+Demo accounts (password `trek1234`): `rahul.kumar@example.com` (trekker), `operator@trekbazaar.in` (operator), `admin@trekbazaar.in` (admin).
+
+## API
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | `/api/treks` | List treks (`?state=`, `?difficulty=`, `?operatorId=`) |
+| GET | `/api/treks/:id` | One trek |
+| POST | `/api/treks` | Publish a trek |
+| PUT | `/api/treks/:id` | Edit a trek |
+| DELETE | `/api/treks/:id` | Delete a trek (409 if it has active bookings) |
+| GET | `/api/bookings` | List bookings (`?email=`, `?status=`) |
+| GET | `/api/bookings/:id` | One booking |
+| POST | `/api/bookings` | Create a booking; the server computes the amount |
+| PATCH | `/api/bookings/:id` | Change status (confirm, cancel, complete) |
+| DELETE | `/api/bookings/:id` | Delete a booking |
+| POST | `/api/users/register` | Create an account |
+| POST | `/api/users/login` | Check email and password |
+| GET | `/api/users` | List users (no password hashes) |
+| PUT | `/api/users/:id` | Update a profile |
 
 ## Changes from the original design
 

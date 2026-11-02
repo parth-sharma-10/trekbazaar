@@ -50,8 +50,9 @@ function validate(form: Form): { errors: Partial<Record<keyof Form, string>>; se
   if (!form.meetingPoint.trim()) errors.meetingPoint = 'Add a meeting point'
   if (!form.difficulty) errors.difficulty = 'Select a difficulty'
   if (!(Number(form.duration) >= 1)) errors.duration = 'At least 1 day'
+  else if (Number(form.duration) > 30) errors.duration = 'At most 30 days'
   if (form.groupSizeMin && form.groupSizeMax && Number(form.groupSizeMin) > Number(form.groupSizeMax)) errors.groupSizeMax = 'Must be at least the minimum'
-  if (!(Number(form.price) > 0)) errors.price = 'Enter a price per person'
+  if (!(Number(form.price) >= 500)) errors.price = 'Enter a price of at least ₹500 per person'
 
   const basic: (keyof Form)[] = ['title', 'description', 'state', 'location', 'meetingPoint']
   const details: (keyof Form)[] = ['difficulty', 'duration', 'groupSizeMax']
@@ -128,7 +129,7 @@ export default function AddEditTrek({ navigate, userRole, setUserRole, editTrekI
 
   const error = (key: keyof Form) => errors[key] && <p className="text-xs text-red-600 mt-1" role="alert">{errors[key]}</p>
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     const result = validate(form)
     setErrors(result.errors)
     if (result.section) {
@@ -136,10 +137,10 @@ export default function AddEditTrek({ navigate, userRole, setUserRole, editTrekI
       notify('Fix the highlighted fields before publishing')
       return
     }
-    const id = existing?.id ?? `c${Date.now()}`
-    saveTrek(buildTrek(form, id, existing))
+    const saved = await saveTrek(buildTrek(form, existing?.id ?? '', existing), !isEdit)
+    if (!saved) return
     notify(isEdit ? 'Trek updated' : 'Trek published. It is now live on Explore.')
-    navigate('trek-details', { trek: id })
+    navigate('trek-details', { trek: saved.id })
   }
 
   const addBatch = () => {

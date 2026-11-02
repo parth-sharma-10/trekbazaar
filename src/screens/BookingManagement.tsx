@@ -40,9 +40,10 @@ export default function BookingManagement({ navigate, userRole, setUserRole }: B
   const allBookings = [...ownBookings, ...sampleBookings.map(b => ({ ...b, status: sampleStatus[b.id] ?? b.status }))]
     .sort((a, b) => b.date.localeCompare(a.date))
 
-  const confirm = (id: string) => {
-    if (ownBookings.some(b => b.id === id)) setBookingStatus(id, 'Confirmed')
-    else setSampleStatus(s => ({ ...s, [id]: 'Confirmed' }))
+  const confirm = async (id: string) => {
+    if (ownBookings.some(b => b.id === id)) {
+      if (!(await setBookingStatus(id, 'Confirmed'))) return
+    } else setSampleStatus(s => ({ ...s, [id]: 'Confirmed' }))
     notify(`Booking ${id} confirmed. The trekker has been notified (demo).`)
   }
 
