@@ -7,8 +7,8 @@ import { destinations, type Trek } from './treks.ts'
 // by up to a few hundred metres; the most commonly cited figure is used. The operators, prices
 // and group sizes are demo values for the fictional companies in this marketplace.
 //
-// Photos are from Wikimedia Commons under the licence in `imageCredit`. The three treks with
-// no Commons photo use the stock image of their state, and say so.
+// Photos are from Wikimedia Commons under the licence in `imageCredit`. Buran Ghati has no
+// Commons photo, so it uses the stock image of its state, and says so.
 
 type SeedTrek = Omit<Trek, 'rating' | 'reviewCount' | 'departures'>
 
@@ -145,8 +145,8 @@ export const moreTreks: SeedTrek[] = [
     id: '15', title: 'Nag Tibba Trek', location: 'Tehri Garhwal District', state: 'Uttarakhand', difficulty: 'Easy',
     durationDays: 2, price: 3800, maxAltitude: '3022m', bestMonths: 'Oct–Jun',
     operator: 'Himalayan Treks Co.', operatorId: 'op1',
-    image: stateImage('Uttarakhand'),
-    imageCredit: 'Stock photo of Uttarakhand, not of this trek',
+    image: commons('thumb/4/4f/Nag_Tibba_02.jpg/1280px-Nag_Tibba_02.jpg'),
+    imageCredit: 'Bhuwan Mahajan, CC BY-SA 4.0, via Wikimedia Commons',
     tags: ['Weekend', 'Beginner'],
     description: 'A weekend trek from Pantwari village to the highest point of the Nag Tibba range, with Bandarpoonch and Kedarkantha visible from the top.',
     highlights: ['Summit at 3,022m', 'Overnight camp in oak forest', 'Close to Dehradun'],
@@ -387,10 +387,10 @@ export const moreTreks: SeedTrek[] = [
   }),
   trek({
     id: '28', title: 'Dzongri Trek', location: 'Gyalshing District', state: 'Sikkim', difficulty: 'Moderate',
-    durationDays: 7, price: 13500, maxAltitude: '4020m', bestMonths: 'Mar–Jun, Sep–Nov',
+    durationDays: 7, price: 13500, maxAltitude: '4200m', bestMonths: 'Mar–Jun, Sep–Nov',
     operator: 'Bengal Himalaya Co.', operatorId: 'op4',
-    image: stateImage('Sikkim'),
-    imageCredit: 'Stock photo of Sikkim, not of this trek',
+    image: commons('thumb/5/52/Mt._Kabru%28south_%26_North%29%2CKabru_Dome_%26_Mt._Kangchenjunga_from_Dzongri_view_point_DSC03985.jpg/1280px-Mt._Kabru%28south_%26_North%29%2CKabru_Dome_%26_Mt._Kangchenjunga_from_Dzongri_view_point_DSC03985.jpg'),
+    imageCredit: 'Anupam2015, CC BY-SA 4.0, via Wikimedia Commons',
     tags: ['Kangchenjunga', 'Meadows'],
     description: 'The shorter half of the Goechala route: from Yuksom via Sachen and Tshoka to the Dzongri meadow and its viewpoint over Kangchenjunga, Kabru and Pandim.',
     highlights: ['Dzongri top sunrise', 'Tshoka village', 'Rhododendron forest in spring'],
@@ -398,8 +398,8 @@ export const moreTreks: SeedTrek[] = [
       { day: 1, title: 'NJP to Yuksom', description: 'Drive to Yuksom.' },
       { day: 2, title: 'Yuksom to Sachen', description: 'Walk into the national park.' },
       { day: 3, title: 'Sachen to Tshoka', description: 'Steep climb to Tshoka (about 3,000m).' },
-      { day: 4, title: 'Tshoka to Dzongri', description: 'Climb through Phedang to Dzongri.' },
-      { day: 5, title: 'Dzongri top and back to Tshoka', description: 'Sunrise at the top (about 4,020m), then descend.' },
+      { day: 4, title: 'Tshoka to Dzongri', description: 'Climb through Phedang to the Dzongri meadow camp (about 4,020m).' },
+      { day: 5, title: 'Dzongri top and back to Tshoka', description: 'Sunrise at Dzongri top (about 4,200m), then descend.' },
       { day: 6, title: 'Tshoka to Yuksom', description: 'Return to Yuksom.' },
       { day: 7, title: 'Drive to NJP', description: 'Drive back to New Jalpaiguri.' },
     ],
