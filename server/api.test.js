@@ -110,7 +110,10 @@ test('treks: departures are owner-managed, past ones hidden, seats counted from 
   assert.equal((await call('POST', '/bookings', { ...pick, participants: 2 }, tokens.user)).status, 201)
   assert.equal((await call('GET', '/treks/4')).body.departures[0].seatsLeft, 1)
   assert.equal((await call('POST', '/bookings', { ...pick, participants: 2 }, tokens.user)).status, 409, 'overfull')
-  await call('PUT', '/treks/4', { departures: original }, tokens.operator)
+  const shrink = [{ date: '2099-02-01', seats: 1 }, { date: '2099-03-01', seats: 3 }]
+  assert.equal((await call('PUT', '/treks/4', { departures: shrink }, tokens.operator)).status, 409, 'cannot go below booked seats')
+  assert.equal((await call('PUT', '/treks/4', { departures: [{ date: '2099-03-01', seats: 3 }] }, tokens.operator)).status, 409, 'cannot drop a booked date')
+  await call('PUT', '/treks/4', { departures: [...original, { date: '2099-02-01', seats: 2 }] }, tokens.operator)
 })
 
 test('treks: schema validation returns 400 with the field message', async () => {
@@ -247,6 +250,14 @@ test('operators: unverified ones cannot publish until an admin verifies them', a
   assert.equal((await call('PUT', `/users/${user.id}`, { verified: true }, tokens.operator)).status, 403)
   assert.equal((await call('PUT', `/users/${user.id}`, { verified: true }, tokens.admin)).body.verified, true)
   assert.equal((await call('POST', '/treks', newTrek, token)).status, 201)
+})
+
+test('users: /me returns the current account and needs a session', async () => {
+  assert.equal((await call('GET', '/users/me')).status, 401)
+  const me = await call('GET', '/users/me', undefined, tokens.operator)
+  assert.equal(me.body.id, 'op1')
+  assert.equal(me.body.verified, true)
+  assert.equal(me.body.passwordHash, undefined)
 })
 
 test('users: suspended accounts cannot log in or use old tokens', async () => {

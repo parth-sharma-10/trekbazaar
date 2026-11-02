@@ -165,10 +165,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const reload = useCallback(() => {
     setStatus('loading')
     // Bookings are private, so a guest only loads the public trek list.
-    Promise.all([api.get<Trek[]>('/treks'), prefs.token ? api.get<Booking[]>('/bookings') : { data: [] }])
-      .then(([t, b]) => {
+    Promise.all([
+      api.get<Trek[]>('/treks'),
+      prefs.token ? api.get<Booking[]>('/bookings') : { data: [] },
+      prefs.token ? api.get<User>('/users/me') : null,
+    ])
+      .then(([t, b, me]) => {
         setTreks(t.data)
         setBookings(b.data)
+        if (me) setPrefs(p => ({ ...p, user: me.data }))
         setStatus('ready')
       })
       .catch(err => {

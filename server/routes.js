@@ -91,6 +91,16 @@ treks.put('/:id', requireRole('operator', 'admin'), async (req, res) => {
   const existing = await Trek.findOne({ id: req.params.id })
   if (!existing) return notFound(res, 'Trek')
   if (!ownsTrek(req.user, existing)) return forbidden(res)
+  if (Array.isArray(req.body.departures)) {
+    const [current] = await present([existing])
+    for (const d of current.departures) {
+      const booked = d.seats - d.seatsLeft
+      const next = req.body.departures.find(n => n?.date === d.date)
+      if (booked > 0 && !(Number(next?.seats) >= booked)) {
+        return res.status(409).json({ error: `${d.date} already has ${booked} seat(s) booked; it needs at least that many seats` })
+      }
+    }
+  }
   const trek = await Trek.findOneAndUpdate({ id: req.params.id }, pick(req.body, trekFieldsFor(req.user)), opts)
   res.json((await present([trek]))[0])
 })
@@ -255,6 +265,9 @@ users.post('/me/password', requireLogin, async (req, res) => {
   await LoginFailure.deleteMany({ email })
   res.json({ message: 'Password updated' })
 })
+
+// The signed-in account as stored now, so a role, verification or suspension change shows without re-login.
+users.get('/me', requireLogin, (req, res) => res.json(req.user))
 
 users.get('/', requireRole('admin'), async (req, res) => {
   res.json(await User.find().sort({ createdAt: 1 }))

@@ -58,7 +58,7 @@ const titles: Record<Screen, string> = {
   'operator-dashboard': 'Operator Dashboard',
   'add-trek': 'Manage Trek',
   'booking-management': 'Booking Management',
-  'revenue-analytics': 'Revenue Analytics',
+  'revenue-analytics': 'Booking Analytics',
   'admin-dashboard': 'Admin Dashboard',
   'user-management': 'User Management',
   'operator-verification': 'Operator Verification',
